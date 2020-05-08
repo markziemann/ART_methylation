@@ -27,7 +27,8 @@ The methylation data have been deposited to NCBI GEO repository accession number
 
 The main conclusions from the original study were:
 
-* The methylation profiles of assisted reproductive technology and IUI newborns were dramatically different from those of naturally (in vivo) conceived newborns.
+* The methylation profiles of assisted reproductive technology and IUI newborns were dramatically
+different from those of naturally (in vivo) conceived newborns.
 
 * Profiles of ICSI-frozen (FET) and IUI infants were strikingly similar, suggesting that
 cryopreservation may temper some of the epigenetic aberrations induced by IVF or ICSI.
@@ -48,6 +49,10 @@ to those obtained in the original study, and
 
 3. to critically evaluate the conclusions made in the original study.
 
+In this report I will be using the missMethyl vignette as a guide to analyse this dataset 
+([Phipson et al, 2015](https://www.ncbi.nlm.nih.gov/pubmed/26424855)).
+
+
 ```{r cars}
 summary(cars)
 ```
@@ -60,6 +65,7 @@ suppressPackageStartupMessages({
     library("missMethyl")
     library("limma")
     library("minfi")
+    library(IlluminaHumanMethylation450kmanifest)
 })
 ```
 
@@ -94,6 +100,51 @@ rgSet
 
 ```
 
+## Normalisation
+
+```{r,norm}
+mSet <- preprocessRaw(rgSet)
+mSetSw <- SWAN(mSet,verbose=TRUE)
+par(mfrow=c(1,2), cex=1.25)
+densityByProbeType(mSet[,1], main = "Raw")
+densityByProbeType(mSetSw[,1], main = "SWAN")
+```
+
+## Filter probes
+
+```{r,filterprobes}
+
+detP <- detectionP(rgSet)
+keep <- rowSums(detP < 0.01) == ncol(rgSet)
+mSetSw <- mSetSw[keep,]
+
+```
+
+## Extracting Beta and M-values
+
+```{r,beta_m_vals}
+meth <- getMeth(mSetSw)
+unmeth <- getUnmeth(mSetSw)
+Mval <- log2((meth + 100)/(unmeth + 100))
+beta <- getBeta(mSetSw)
+dim(Mval)
+```
+
+## MDS plot
+
+```{r,mds}
+par(mfrow=c(1,1))
+sample_groups <- factor(targets$Sample_Group)
+
+mydist <- plotMDS(Mval, labels=targets$Sample_Name, col=as.integer(sample_groups))
+
+```
+
+```{r,mytest}
+
+legend("topleft",legend=levels(sample_groups),pch=16,cex=1.2,col=1:2)
+
+```
 ## References
 
 Estill MS, Bolnick JM, Waterland RA, Bolnick AD, Diamond MP, Krawetz SA.
@@ -101,6 +152,11 @@ Assisted reproductive technology alters deoxyribonucleic acid methylation
 profiles in bloodspots of newborn infants. Fertil Steril. 2016 Sep
 1;106(3):629-639.e10. doi: 10.1016/j.fertnstert.2016.05.006. Epub 2016 Jun 8.
 PubMed PMID: 27288894.
+
+Phipson B, Maksimovic J, Oshlack A. missMethyl: an R package for analyzing
+data from Illumina's HumanMethylation450 platform. Bioinformatics. 2016 Jan
+15;32(2):286-8. doi: 10.1093/bioinformatics/btv560. Epub 2015 Sep 30. PubMed
+PMID: 26424855.
 
 Sofer T, Schifano ED, Hoppin JA, Hou L, Baccarelli AA. A-clustering: a novel
 method for the detection of co-regulated methylation regions, and regions
