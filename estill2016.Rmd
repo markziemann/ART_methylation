@@ -1,0 +1,114 @@
+---
+title: "Estill 2016 reanalysis"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+## Introduction
+
+In this report, I will take you through a re-analysis methylation data first described by 
+[Estill et al (2016)](https://www.ncbi.nlm.nih.gov/pubmed/27288894).
+
+In their study, they analysed the DNA methylation patterns of 137 neonatal blood spots
+conceived spontaneously, through through insemination (IUI), or through ICSI using fresh or
+cryopreserved (frozen) embryo transfer.
+
+The platform used in the study is the Illumina Infinium HumanMethylation450k BeadChip assay.
+The authors used a pipeline based on ChAMP 
+([Tian et al, 2017](https://www.ncbi.nlm.nih.gov/pubmed/28961746)), together with Adjacent
+Site Clustering ([Sofer et al, 2013](https://www.ncbi.nlm.nih.gov/pubmed/23990415)).
+
+The methylation data have been deposited to NCBI GEO repository accession number 
+[GSE79257](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE79257).
+
+The main conclusions from the original study were:
+
+* The methylation profiles of assisted reproductive technology and IUI newborns were dramatically different from those of naturally (in vivo) conceived newborns.
+
+* Profiles of ICSI-frozen (FET) and IUI infants were strikingly similar, suggesting that
+cryopreservation may temper some of the epigenetic aberrations induced by IVF or ICSI.
+
+*  The DNA methylation changes associated with IVF/ICSI culture conditions and/or parental
+infertility were detected at metastable epialleles, suggesting a lasting impact on a child's
+epigenome.
+
+* Both infertility and ICSI alter DNA methylation at specific genomic loci, an effect that 
+is mitigated to some extent by FET (freezing).
+
+The aim of this work is to;
+
+1. develop the analytical pipelines required for efficient re-analysis of 450K array data,
+
+2. to confirm that we are able to obtain differential methylation results that are similar
+to those obtained in the original study, and
+
+3. to critically evaluate the conclusions made in the original study.
+
+```{r cars}
+summary(cars)
+```
+
+## Loading packages
+
+```{r,packages}
+suppressPackageStartupMessages({
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("minfi")
+})
+```
+
+## Data import
+
+```{r,data}
+ARRAY_SAMPLESHEET="GSE79257_Illumina_samplesheet.csv"
+# only download it if it is not present on the system
+if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
+    DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
+    download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE79nnn/GSE79257/suppl/GSE79257_Illumina_samplesheet.csv.gz",
+        destfile = DLFILE)
+    gunzip(DLFILE)
+}
+
+ARRAY_DATA="GSE79257_RAW.tar"
+# only download it if it is not present on the system
+if ( !dir.exists("IDAT") ) {
+  dir.create("IDAT")
+  download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE79257&format=file",
+    destfile = ARRAY_DATA)
+}
+
+untar(exdir = "IDAT", tarfile = "GSE79257_RAW.tar",)
+
+baseDir <- "."
+targets <- read.metharray.sheet(baseDir)
+targets
+
+rgSet <- read.metharray.exp(targets = targets)
+rgSet
+
+```
+
+## References
+
+Estill MS, Bolnick JM, Waterland RA, Bolnick AD, Diamond MP, Krawetz SA.
+Assisted reproductive technology alters deoxyribonucleic acid methylation
+profiles in bloodspots of newborn infants. Fertil Steril. 2016 Sep
+1;106(3):629-639.e10. doi: 10.1016/j.fertnstert.2016.05.006. Epub 2016 Jun 8.
+PubMed PMID: 27288894.
+
+Sofer T, Schifano ED, Hoppin JA, Hou L, Baccarelli AA. A-clustering: a novel
+method for the detection of co-regulated methylation regions, and regions
+associated with exposure. Bioinformatics. 2013 Nov 15;29(22):2884-91. doi:
+10.1093/bioinformatics/btt498. Epub 2013 Aug 29. PubMed PMID: 23990415; PubMed
+Central PMCID: PMC3810849.
+
+Tian Y, Morris TJ, Webster AP, Yang Z, Beck S, Feber A, Teschendorff AE.
+ChAMP: updated methylation analysis pipeline for Illumina BeadChips.
+Bioinformatics. 2017 Dec 15;33(24):3982-3984. doi: 10.1093/bioinformatics/btx513.
+PubMed PMID: 28961746; PubMed Central PMCID: PMC5860089.
