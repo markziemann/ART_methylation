@@ -52,11 +52,6 @@ to those obtained in the original study, and
 In this report I will be using the missMethyl vignette as a guide to analyse this dataset 
 ([Phipson et al, 2015](https://www.ncbi.nlm.nih.gov/pubmed/26424855)).
 
-
-```{r cars}
-summary(cars)
-```
-
 ## Loading packages
 
 ```{r,packages}
@@ -65,11 +60,14 @@ suppressPackageStartupMessages({
     library("missMethyl")
     library("limma")
     library("minfi")
-    library(IlluminaHumanMethylation450kmanifest)
+    library("IlluminaHumanMethylation450kmanifest")
+    library("RColorBrewer")
 })
 ```
 
 ## Data import
+
+TODO- add explanation
 
 ```{r,data}
 ARRAY_SAMPLESHEET="GSE79257_Illumina_samplesheet.csv"
@@ -132,17 +130,96 @@ dim(Mval)
 
 ## MDS plot
 
-```{r,mds}
-par(mfrow=c(1,1))
+MDS by ART group.
+```{r,mds1,fig.width = 8 ,fig.height = 8}
+targets$sex <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",2))
+targets$art <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",1))
+
+#Mval_subset <- head(Mval,10000)
+
+sample_groups <- factor(targets$art)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+
+colours <- colour_palette[as.integer(factor(targets$art))]
+
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
+
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+
+mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours)
+```
+
+MDS by sex.
+
+```{r,mds3,fig.width = 8 ,fig.height = 8}
+sample_groups <- factor(targets$sex)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+
+colours <- colour_palette[as.integer(factor(targets$sex))]
+
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
+
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+
+plotMDS(mydist, labels=targets$Sample_Name,col=colours)
+```
+
+
+MDS by ART and sex.
+
+```{r,mds2,fig.width = 8 ,fig.height = 8}
 sample_groups <- factor(targets$Sample_Group)
 
-mydist <- plotMDS(Mval, labels=targets$Sample_Name, col=as.integer(sample_groups))
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 
+colours <- colour_palette[as.integer(factor(targets$Sample_Group))]
+
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
+
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+
+plotMDS(mydist, labels=targets$Sample_Name,col=colours)
 ```
+
+MDS by array chip.
+
+```{r,mds2,fig.width = 8 ,fig.height = 8}
+sample_groups <- factor(targets$Array)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+
+colours <- colour_palette[as.integer(factor(targets$Array))]
+
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by array chip")
+
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+
+plotMDS(mydist, labels=targets$Sample_Name,col=colours)
+```
+
+MDS by sample plate.
+
+```{r,mds2,fig.width = 8 ,fig.height = 8}
+sample_groups <- factor(targets$Sample_Plate)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+
+colours <- colour_palette[as.integer(factor(targets$Sample_Plate))]
+
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sample plate")
+
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+
+plotMDS(mydist, labels=targets$Sample_Name,col=colours)
+```
+
+
 
 ```{r,mytest}
 
-legend("topleft",legend=levels(sample_groups),pch=16,cex=1.2,col=1:2)
+#legend("topleft",legend=levels(sample_groups),pch=16,cex=1.2,col=1:2)
 
 ```
 ## References
