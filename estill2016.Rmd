@@ -516,7 +516,8 @@ heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.
     col=my_palette,main="Spearman correlations")
 ```
 
-* heatmaps of the top N probes
+## Generate heatmaps of the top N probes
+
 ```{r,heatmaps}
 head(Mval_flt)
 head(top_nat_vs_fh)
