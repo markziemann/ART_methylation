@@ -14,8 +14,8 @@ In this report, I will take you through a re-analysis methylation data first des
 [Estill et al (2016)](https://www.ncbi.nlm.nih.gov/pubmed/27288894).
 
 In their study, they analysed the DNA methylation patterns of 137 neonatal blood spots
-conceived spontaneously, through through insemination (IUI), or through ICSI using fresh or
-cryopreserved (frozen) embryo transfer.
+conceived naturally (NAT), through through insemination (IUI), or through ICSI using fresh or
+cryopreserved (frozen) embryo transfer (FH and FZ respectively).
 
 The platform used in the study is the Illumina Infinium HumanMethylation450k BeadChip assay.
 The authors used a pipeline based on ChAMP 
@@ -54,6 +54,9 @@ In this report I will be using the missMethyl vignette as a guide to analyse thi
 
 ## Loading packages
 
+These packackes will help us to perform vital steps such as normalisation, filtering, 
+differential analysis, etc, and provide information about the array probe annotaions.
+
 ```{r,packages}
 suppressPackageStartupMessages({
     library("R.utils")
@@ -62,7 +65,10 @@ suppressPackageStartupMessages({
     library("minfi")
     library("IlluminaHumanMethylation450kmanifest")
     library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
 })
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ```
 
 ## Data import
@@ -100,7 +106,7 @@ rgSet
 
 ## Normalisation
 
-```{r,norm}
+```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
 mSet <- preprocessRaw(rgSet)
 mSetSw <- SWAN(mSet,verbose=TRUE)
 par(mfrow=c(1,2), cex=1.25)
@@ -110,32 +116,85 @@ densityByProbeType(mSetSw[,1], main = "SWAN")
 
 ## Filter probes
 
-```{r,filterprobes}
+Here we are running parallel analyses, both including and excluding sex chromosomes.
 
+```{r,filterprobes}
+# include sex chromosomes
 detP <- detectionP(rgSet)
 keep <- rowSums(detP < 0.01) == ncol(rgSet)
 mSetSw <- mSetSw[keep,]
 
+# exclude sex chromosomes
+ann450k$Name
+head(ann450k)
+featureNames(mSetSw)
+keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% 
+                                                     c("chrX","chrY")])
+mSetFlt <- mSetSw[keep,]
 ```
 
 ## Extracting Beta and M-values
 
 ```{r,beta_m_vals}
+# include sex chromosomes
 meth <- getMeth(mSetSw)
 unmeth <- getUnmeth(mSetSw)
 Mval <- log2((meth + 100)/(unmeth + 100))
 beta <- getBeta(mSetSw)
 dim(Mval)
+
+# exclude sex chromosomes
+meth <- getMeth(mSetFlt)
+unmeth <- getUnmeth(mSetFlt)
+Mval_flt <- log2((meth + 100)/(unmeth + 100))
+beta_flt <- getBeta(mSetFlt)
+dim(Mval_flt)
+
 ```
 
 ## MDS plot
 
-MDS by ART group.
-```{r,mds1,fig.width = 8 ,fig.height = 8}
+[Multidimensional scaling(https://en.wikipedia.org/wiki/Multidimensional_scaling)  plot is a method used
+to identify the major sources of variation in a dataset. In the MDS plots below, I will be plotting the 
+first two dimensions (principal components [PCs]), with each sample label coloured either by ART 
+classification, sex, ART and sex, and then array chip and then sample plate. 
+
+We wil begin with MDS analysis including the sex chromosomes and then exclude them.
+
+First, let's quantify the contribution of the major principal components. with a scree plot, we can see 
+whether most of the variation is captured in the first two PCs or whether it is spread over more PCs.
+As we can see in Figure 2, the main source of variation is what is shown in PC1, and a much lesser
+extent on the other dimensions.
+
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+par(mfrow=c(2,1))
+
+pc<-princomp(Mval)$sdev
+pcp <- pc/sum(pc)*100
+pcp <- pcp[1:10]
+barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),ylab="percent (%) variance explained",
+    main="include sex chromosomes")
+text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.6)
+
+pc<-princomp(Mval_flt)$sdev
+pcp <- pc/sum(pc)*100
+pcp <- pcp[1:10]
+barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),ylab="percent (%) variance explained",
+    main="exclude sex chromosomes")
+text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.6)
+
+```
+
+
+Here is the MDS plot by ART classification (Figure 3). You can see that there are four clusters 
+of samples when MDS is projected this way. Natural birth infants (NAT) are mostly seen in the 
+two clusters at the bottom of the chart and the IVF frozen, IVF fresh and in intrauterine 
+insemination (IUI) appear mostly as two clusters at the top of the chart. IUI seem to have a
+few samples that appear as intermediate between the upper and lower clusters.
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
 targets$sex <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",2))
 targets$art <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",1))
-
-#Mval_subset <- head(Mval,10000)
 
 sample_groups <- factor(targets$art)
 
@@ -150,9 +209,12 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours)
 ```
 
-MDS by sex.
+Next, we created an MDS plot by sex (Figure 4). The female samples appear in the two cluster on the 
+right hand side of the chart and the male sample on the left. This could be simply due to the
+chromosomal makeup of the male and female samples or could also be due to autosomes. To check this,
+the MDS plot needs to be repeated with autosomes excluded.
 
-```{r,mds3,fig.width = 8 ,fig.height = 8}
+```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
 sample_groups <- factor(targets$sex)
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -166,10 +228,10 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 plotMDS(mydist, labels=targets$Sample_Name,col=colours)
 ```
 
+For completeness, we show the MDS by ART and sex (Figure 5). It confirms the trends seen above where the 
+samples are split on the x axis by sex and on the y axis by ART classification.
 
-MDS by ART and sex.
-
-```{r,mds2,fig.width = 8 ,fig.height = 8}
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
 sample_groups <- factor(targets$Sample_Group)
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -183,9 +245,11 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 plotMDS(mydist, labels=targets$Sample_Name,col=colours)
 ```
 
-MDS by array chip.
+To acertain whether technical factors like batch effects account for variance on the two main PCs, we
+create an MDS by array chip (Figure 6). There appears to be no relationship between array chip number
+and the top two PCs.
 
-```{r,mds2,fig.width = 8 ,fig.height = 8}
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6. MDS plot coloured by array chip."}
 sample_groups <- factor(targets$Array)
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -199,9 +263,12 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 plotMDS(mydist, labels=targets$Sample_Name,col=colours)
 ```
 
-MDS by sample plate.
+This was also performed for sample plate (Figure 7). It appears that the laboratory did not randomise
+samples over plates 1 and 2. For example the samples on plate 2 appear to be mostly NAT. This does
+not appear to be a major concern because NAT samples from plate 2 seem to cluster with NAT samples on
+plate 1.
 
-```{r,mds2,fig.width = 8 ,fig.height = 8}
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 7. MDS plot coloured by sample plate."}
 sample_groups <- factor(targets$Sample_Plate)
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -214,6 +281,20 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 
 plotMDS(mydist, labels=targets$Sample_Name,col=colours)
 ```
+
+```{r,autosomes}
+
+str(IlluminaHumanMethylation450kmanifest)
+
+data(IlluminaHumanMethylation450kmanifest)
+keep <- !(featureNames(mSetSqFlt) %in% ann450k$Name[ann450k$chr %in% 
+                                                        c("chrX","chrY")])
+table(keep)
+mSetSqFlt <- mSetSqFlt[keep,]
+
+```
+
+
 
 
 
