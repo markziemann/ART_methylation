@@ -66,7 +66,10 @@ suppressPackageStartupMessages({
     library("IlluminaHumanMethylation450kmanifest")
     library("RColorBrewer")
     library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
-})
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+  })
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ```
@@ -97,7 +100,7 @@ untar(exdir = "IDAT", tarfile = "GSE79257_RAW.tar",)
 
 baseDir <- "."
 targets <- read.metharray.sheet(baseDir)
-targets
+head(targets)
 
 rgSet <- read.metharray.exp(targets = targets)
 rgSet
@@ -108,7 +111,7 @@ rgSet
 
 ```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
 mSet <- preprocessRaw(rgSet)
-mSetSw <- SWAN(mSet,verbose=TRUE)
+mSetSw <- SWAN(mSet,verbose=FALSE)
 par(mfrow=c(1,2), cex=1.25)
 densityByProbeType(mSet[,1], main = "Raw")
 densityByProbeType(mSetSw[,1], main = "SWAN")
@@ -125,7 +128,6 @@ keep <- rowSums(detP < 0.01) == ncol(rgSet)
 mSetSw <- mSetSw[keep,]
 
 # exclude sex chromosomes
-featureNames(mSetSw)
 keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% 
                                                      c("chrX","chrY")])
 mSetFlt <- mSetSw[keep,]
@@ -198,19 +200,12 @@ have intermediate methylation, which points to a slight effect of freezing.
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
 targets$sex <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",2))
 targets$art <- factor(sapply(strsplit(targets$Sample_Group,"_"),"[[",1))
-
 sample_groups <- factor(targets$art)
-
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-
 colours <- colour_palette[as.integer(factor(targets$art))]
-
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
-
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-
 mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-
 mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
 
@@ -224,17 +219,11 @@ that ART classification is the dominant source of variation.
 
 ```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
 sample_groups <- factor(targets$sex)
-
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-
 colours <- colour_palette[as.integer(factor(targets$sex))]
-
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
-
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-
 plotMDS(mydist, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-
 plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
 
@@ -245,17 +234,11 @@ When sex chromosomes are removed, it is clear that ART classification is the dom
 
 ```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
 sample_groups <- factor(targets$Sample_Group)
-
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-
 colours <- colour_palette[as.integer(factor(targets$Sample_Group))]
-
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
-
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-
 plotMDS(mydist, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-
 plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
 
@@ -265,17 +248,11 @@ and the top two PCs in the two MDS plots shown below.
 
 ```{r,mds4,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6. MDS plot coloured by array chip."}
 sample_groups <- factor(targets$Array)
-
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-
 colours <- colour_palette[as.integer(factor(targets$Array))]
-
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by array chip")
-
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-
 plotMDS(mydist, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-
 plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
 
@@ -286,17 +263,11 @@ plate 1 in both MDS plots.
 
 ```{r,mds5,fig.width = 8 ,fig.height = 8, fig.cap="Figure 7. MDS plot coloured by sample plate."}
 sample_groups <- factor(targets$Sample_Plate)
-
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-
 colours <- colour_palette[as.integer(factor(targets$Sample_Plate))]
-
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sample plate")
-
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-
 plotMDS(mydist, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-
 plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
 
@@ -319,6 +290,7 @@ lumped together and provide more power to determine subtle effects of IVF.
 * __IUI vs FH+FZ__: It will be interesting to see whether the process of extracting eggs, culturing 
 and fertilising in vitro has an effect that is separate to IUI.
 
+### NAT vs FH
 In this first analysis I will look at the effect of natural conception versus IVF (fresh).
 I have conducted the differential analysis in parallel, both includng and excluding sex
 chromosomes. Even when excluding autosomes, there are ~2000 probes on the autosomes that 
@@ -339,7 +311,11 @@ Mvalss <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top<-topTable(fit.reduced,coef=2)
+top <- topTable(fit.reduced,coef=3, number = Inf)
+top_up <- rownames(subset(top,adj.P.Val<0.05 & logFC>0))
+top_dn <- rownames(subset(top,adj.P.Val<0.05 & logFC<0))
+length(top_up)
+length(top_dn)
 
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
@@ -350,11 +326,14 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_nat_vs_fh <- topTable(fit.reduced,coef=2,number = Inf)
-dim(top_nat_vs_fh)
-head(top_nat_vs_fh)
+top_nat_vs_fh <- topTable(fit.reduced,coef=3, number = Inf)
+top_nat_vs_fh_up <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC>0))
+top_nat_vs_fh_dn <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC<0))
+length(top_nat_vs_fh_up)
+length(top_nat_vs_fh_dn)
 ```
 
+### NAT vs FZ
 In the comparison of NAT and FZ samples, there were ~130k probes with lower methylation
 and ~37k with higher methylation.
 
@@ -367,11 +346,12 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_nat_vs_fz<-topTable(fit.reduced,coef=2)
+top_nat_vs_fz<-topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_fz)
 head(top_nat_vs_fz)
 ```
 
+### NAT vs IUI
 In the comparison of NAT and IUI samples there were ~114k probes with reduced methylation
 and ~36k with higher methylation.
 
@@ -384,11 +364,12 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_nat_vs_iui<-topTable(fit.reduced,coef=2)
+top_nat_vs_iui<-topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_iui)
 head(top_nat_vs_iui)
 ```
 
+### FH vs FZ
 In the comparison of FH and FZ, only ~13k probes were differentially methylated with roughly
 half lower and higher. This suggests that freezing has only a small effect on methylation.
 
@@ -401,11 +382,12 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_fh_vs_fz <- topTable(fit.reduced,coef=2)
+top_fh_vs_fz <- topTable(fit.reduced,coef=3,number = Inf)
 dim(top_fh_vs_fz)
 head(top_fh_vs_fz)
 ```
 
+### NAT vs FH/FZ
 Because the effect of embryo freezing was found to be very small, we compared the NAT samples
 to all IVF samples (union of FH and FZ). There were ~200k probes with altered methylation
 ~157k with lower methylation and ~50k higher. This result points to a major effect of IVF on
@@ -422,11 +404,12 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_nat_vs_fx <- topTable(fit.reduced,coef=2)
+top_nat_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_fx)
 head(top_nat_vs_fx)
 ```
 
+### IUI vs FH/FZ
 We know that IVF conceived infants have a major shift in genome methylation, but we don't know
 exactly whether it is caused by the IVF process itself. To eliminate whether it might be potentially
 caused by subfertility we looked at whether the differences between IUI and FH+FZ were large.
@@ -447,17 +430,109 @@ Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
 fit.reduced <- lmFit(Mvalss,design)
 fit.reduced <- eBayes(fit.reduced)
 summary(decideTests(fit.reduced))
-top_fh_vs_fz <- topTable(fit.reduced,coef=2)
-dim(top_fh_vs_fz)
-head(top_fh_vs_fz)
+top_iui_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
+dim(top_iui_vs_fx)
+head(top_iui_vs_fx)
 ```
 
-## To-do
-Remaining analysis that is required:
+## Venn diagrams of the differential methylated probes for each contrast
 
-* Venn diagrams of the differential methylated probes for each contrast
+```{r,sets}
+top_nat_vs_fh_up <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC>0))
+top_nat_vs_fh_dn <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC<0))
+
+top_nat_vs_fz_up <- rownames(subset(top_nat_vs_fz,adj.P.Val<0.05 & logFC>0))
+top_nat_vs_fz_dn <- rownames(subset(top_nat_vs_fz,adj.P.Val<0.05 & logFC<0))
+
+top_nat_vs_iui_up <- rownames(subset(top_nat_vs_iui,adj.P.Val<0.05 & logFC>0))
+top_nat_vs_iui_dn <- rownames(subset(top_nat_vs_iui,adj.P.Val<0.05 & logFC<0))
+
+top_nat_vs_fx_up <- rownames(subset(top_nat_vs_fx,adj.P.Val<0.05 & logFC>0))
+top_nat_vs_fx_dn <- rownames(subset(top_nat_vs_fx,adj.P.Val<0.05 & logFC<0))
+
+top_iui_vs_fx_up <- rownames(subset(top_iui_vs_fx,adj.P.Val<0.05 & logFC>0))
+top_iui_vs_fx_dn <- rownames(subset(top_iui_vs_fx,adj.P.Val<0.05 & logFC<0))
+```
+
+First, we look at the similarity of DMPs altered by fresh and frozen procedures. The overlap is very large.
+This indicates a high degree of similarity between the profiles.
+
+```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
+v1 <- list("FH up" = top_nat_vs_fh_up , 
+           "FZ up" = top_nat_vs_fz_up ,
+           "FH dn" = top_nat_vs_fh_dn ,
+           "FZ dn" = top_nat_vs_fz_dn )
+plot(euler(v1, shape = "ellipse"), quantities = TRUE)
+```
+
+Now to take a look at whether IUI is similar to IVF fresh and frozen. The overlap is just a large as 
+FH vs FZ.
+
+```{r,venn2,fig.cap="Comparison of probes altered by IUI, fresh and frozen IVF procedures"}
+v2 <- list("FH up" = top_nat_vs_fh_up , 
+           "FH dn" = top_nat_vs_fh_dn ,
+           "IUI up" = top_nat_vs_iui_up ,
+           "IUI dn" = top_nat_vs_iui_dn )
+plot(euler(v2, shape = "ellipse"), quantities = TRUE)
+
+v3 <- list("FZ up" = top_nat_vs_fz_up , 
+           "FZ dn" = top_nat_vs_fz_dn ,
+           "IUI up" = top_nat_vs_iui_up ,
+           "IUI dn" = top_nat_vs_iui_dn )
+plot(euler(v3, shape = "ellipse"), quantities = FALSE)
+
+```
+
+## Spearman correlations of each contrast
+While the above Venn diagrams are suggestive of similarity between contrasts, the best 
+way to assess this is with correlation analysis. I have chosen Spearman as based on
+the directional p-value ranking metric.
+
+```{r,spearman}
+myranks <- function(x) {
+  x$score <- sign(x$logFC)/log10(x$adj.P.Val)
+  y <- x[,"score",drop=FALSE]
+  y$rn <- rownames(y)
+  return(y)
+}
+
+mycontrasts <- list("top_nat_vs_fh"=top_nat_vs_fh, "top_nat_vs_fz"=top_nat_vs_fz, "top_nat_vs_fx"=top_nat_vs_fx ,
+  "top_nat_vs_iui"=top_nat_vs_iui, "top_fh_vs_fz"=top_fh_vs_fz, "top_iui_vs_fx"=top_iui_vs_fx)
+
+str(mycontrasts)
+
+myrnks <- lapply(X = mycontrasts, FUN = myranks)
+
+df <- join_all(myrnks,by="rn")
+rownames(df) <- df$rn
+df$rn=NULL
+colnames(df) <- names(mycontrasts)
+head(df)
+
+mycors <- cor(df,method = "spearman")
+
+my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n = 25)
+heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
+    col=my_palette,main="Spearman correlations")
+```
 
 * heatmaps of the top N probes
+```{r,heatmaps}
+head(Mval_flt)
+head(top_nat_vs_fh)
+make_heatmaps <- function(dm,name,mx,n) {
+  topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
+  ss <- mx[which(rownames(mx) %in% topgenes),]
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
+      col=my_palette, main=name)
+}
+
+for (i in seq_along(mycontrasts)) {
+  make_heatmaps(dm=mycontrasts[[i]],name=names(mycontrasts)[i],Mvalss,50)
+}
+
+```
 
 * MA plots / smear plots
 
