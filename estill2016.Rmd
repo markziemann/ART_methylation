@@ -69,10 +69,99 @@ suppressPackageStartupMessages({
     library("eulerr")
     library("plyr")
     library("gplots")
+    library("reshape2")
+    library("beeswarm")
   })
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ```
+
+
+## Loading functions
+
+These functions provide shortcuts to help with charts and other analysis. They will
+eventually be shoved into another Rscript or package but can stay here for now.
+
+```{r,load_functions}
+
+# scree plot shows the amount of variation in a dataset that is accounted
+# for by the first N principal components
+myscree <- function(mx,n=10,main="") {
+  pc<-princomp(Mval)$sdev
+  pcp <- pc/sum(pc)*100
+  pcp <- pcp[1:10]
+  barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),
+      ylab="percent (%) variance explained", main=main)
+  text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.8)
+}
+
+
+# Here is a function to make a volcano plot
+make_volcano <- function(dm,name,mx) {
+    sig <- subset(dm,adj.P.Val<0.05)
+    N_SIG=nrow(sig)
+    N_UP=nrow(subset(sig,logFC>0))
+    N_DN=nrow(subset(sig,logFC<0))
+    HEADER=paste(N_SIG,"@5%FDR,", N_UP, "up", N_DN, "dn")
+    plot(dm$logFC,-log10(dm$P.Val),cex=0.5,pch=19,col="darkgray",
+        main=name, xlab="log FC", ylab="-log10 pval")
+    mtext(HEADER)
+    grid()
+    points(sig$logFC,-log10(sig$P.Val),cex=0.5,pch=19,col="red")
+}
+
+# Here is a function to make heatmaps 
+make_heatmap <- function(dm,name,mx,n) {
+  topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
+  ss <- mx[which(rownames(mx) %in% topgenes),]
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
+      col=my_palette, main=name)
+}
+
+# make beeswarm charts
+# dm = a limma differential meth object
+# name = character name of the limma dm object
+# mx = matrix of normalised data
+# groups = a vector of factors corresponding to the cols in mx
+# n = the number of top significant genes to plot (default = 15) 
+make_beeswarms <- function(dm,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+
+    for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,ylim=c(-8,8),cex=0.2, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
+
+
+make_dm_plots <- function(dm,name,mx,groups=groups) {
+    make_volcano(dm,name,mx)
+    make_beeswarms(dm ,name , mx , groups , n= 15)
+    make_heatmap(dm , name , mx ,n = 50)
+}  
+
+
+```
+
+
+
 
 ## Data import
 
@@ -168,24 +257,12 @@ extent on the other dimensions. Interestingly, excluding sex chromosomes does no
 relative contributions of PCs very much.
 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
-par(mfrow=c(2,1))
 
-pc<-princomp(Mval)$sdev
-pcp <- pc/sum(pc)*100
-pcp <- pcp[1:10]
-barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),ylab="percent (%) variance explained",
-    main="include sex chromosomes")
-text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.6)
-
-pc<-princomp(Mval_flt)$sdev
-pcp <- pc/sum(pc)*100
-pcp <- pcp[1:10]
-barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),ylab="percent (%) variance explained",
-    main="exclude sex chromosomes")
-text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.6)
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
 
 ```
-
 
 Here is the MDS plot by ART classification (Figure 3). You can see that there are four clusters 
 of samples when MDS is projected this way. Natural birth infants (NAT) are mostly seen in the 
@@ -331,6 +408,8 @@ top_nat_vs_fh_up <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC>0))
 top_nat_vs_fh_dn <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC<0))
 length(top_nat_vs_fh_up)
 length(top_nat_vs_fh_dn)
+make_dm_plots(dm = top_nat_vs_fh ,name="top_nat_vs_fh" , mx= Mvalss, groups= group)
+
 ```
 
 ### NAT vs FZ
@@ -349,6 +428,8 @@ summary(decideTests(fit.reduced))
 top_nat_vs_fz<-topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_fz)
 head(top_nat_vs_fz)
+make_dm_plots(dm = top_nat_vs_fz ,name="top_nat_vs_fz" , mx= Mvalss, groups= group)
+
 ```
 
 ### NAT vs IUI
@@ -367,6 +448,7 @@ summary(decideTests(fit.reduced))
 top_nat_vs_iui<-topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_iui)
 head(top_nat_vs_iui)
+make_dm_plots(dm = top_nat_vs_iui ,name="top_nat_vs_iui" , mx= Mvalss, groups= group)
 ```
 
 ### FH vs FZ
@@ -385,6 +467,7 @@ summary(decideTests(fit.reduced))
 top_fh_vs_fz <- topTable(fit.reduced,coef=3,number = Inf)
 dim(top_fh_vs_fz)
 head(top_fh_vs_fz)
+make_dm_plots(dm = top_fh_vs_fz ,name="top_fh_vs_fz" , mx= Mvalss, groups= group)
 ```
 
 ### NAT vs FH/FZ
@@ -407,6 +490,7 @@ summary(decideTests(fit.reduced))
 top_nat_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
 dim(top_nat_vs_fx)
 head(top_nat_vs_fx)
+make_dm_plots(dm = top_nat_vs_fx ,name="top_nat_vs_fx" , mx= Mvalss, groups= group)
 ```
 
 ### IUI vs FH/FZ
@@ -433,6 +517,7 @@ summary(decideTests(fit.reduced))
 top_iui_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
 dim(top_iui_vs_fx)
 head(top_iui_vs_fx)
+make_dm_plots(dm = top_iui_vs_fx ,name="top_iui_vs_fx" , mx= Mvalss, groups= group)
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
@@ -514,32 +599,24 @@ mycors <- cor(df,method = "spearman")
 my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n = 25)
 heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
     col=my_palette,main="Spearman correlations")
+
+mycors
 ```
 
 ## Generate heatmaps of the top N probes
 
-```{r,heatmaps}
-head(Mval_flt)
-head(top_nat_vs_fh)
-make_heatmaps <- function(dm,name,mx,n) {
-  topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
-  ss <- mx[which(rownames(mx) %in% topgenes),]
-  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
-      col=my_palette, main=name)
-}
+Heatmaps give us a visual idea as to how consistent the observed differential methylation patterns are for the top N genes.
 
-for (i in seq_along(mycontrasts)) {
-  make_heatmaps(dm=mycontrasts[[i]],name=names(mycontrasts)[i],Mvalss,50)
-}
+## Generate volcano plots
 
-```
+Volcano plots give us an idea about how many differential genes were identified for a particular contrast.
 
-* MA plots / smear plots
+## Genomic compartment analysis
 
+I would like to know whether the observed changes occurring are overrepresented at different genomic contexts.
+
+## Todo
 * gene ontology / pathway analysis
-
-* genomic compartment analysis
 
 * repeat elements / GWAM
 
