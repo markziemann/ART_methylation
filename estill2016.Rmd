@@ -150,17 +150,33 @@ make_beeswarms <- function(dm,name,mx,groups,n=15) {
     }
 }
 
-
+# this is a wrapper which creates three charts
+# We will be adding more
 make_dm_plots <- function(dm,name,mx,groups=groups) {
     make_volcano(dm,name,mx)
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mx ,n = 50)
 }  
 
+# this is a function which will perform differential methylation analysis
+# if you provide it with the right inputs
+dm_analysis <- function(samplesheet,sex,groups,mx,name) {
+    design <- model.matrix(~ sex + groups)
+    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+    dm <- topTable(fit.reduced,coef=3, number = Inf)
+    dm_up <- rownames(subset(top_nat_vs_fh,"adj.P.Val"<0.05 & "logFC">0))
+    dm_dn <- rownames(subset(top_nat_vs_fh,"adj.P.Val"<0.05 & "logFC"<0))
+    length(dm_up)
+    length(dm_dn)
+    make_dm_plots(dm = dm ,name="top_nat_vs_fh" , mx= Mvalss, groups= groups)
+    dat <- list("dm"=dm,"dm_up"=dm_up,"dm_dn"=dm_dn)
+}
+
 
 ```
-
-
 
 
 ## Data import
@@ -378,38 +394,21 @@ In the comparison of NAT and FH samples there were ~150k probes with differentia
 (FDR<0.05), with ~120k loss of methylation and ~30k with increased methylation.
 
 ```{r,nat_vs_fh}
+
 # include sex chromosomes
-targets$Basename <- gsub("./IDAT/","",targets$Basename)
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
-group <- factor(samplesheet$art,levels=c("NAT","FH"))
+groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top <- topTable(fit.reduced,coef=3, number = Inf)
-top_up <- rownames(subset(top,adj.P.Val<0.05 & logFC>0))
-top_dn <- rownames(subset(top,adj.P.Val<0.05 & logFC<0))
-length(top_up)
-length(top_dn)
+top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval,name="top_nat_vs_fh_inc")
+head(top_nat_vs_fh_inc$dm)
+
 
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
 group <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_nat_vs_fh <- topTable(fit.reduced,coef=3, number = Inf)
-top_nat_vs_fh_up <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC>0))
-top_nat_vs_fh_dn <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC<0))
-length(top_nat_vs_fh_up)
-length(top_nat_vs_fh_dn)
-make_dm_plots(dm = top_nat_vs_fh ,name="top_nat_vs_fh" , mx= Mvalss, groups= group)
-
+top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh")
+head(top_nat_vs_fh$dm)
 ```
 
 ### NAT vs FZ
@@ -418,18 +417,10 @@ and ~37k with higher methylation.
 
 ```{r,nat_vs_fz}
 samplesheet <- subset(targets,art=="NAT" | art=="FZ")
-group <- factor(samplesheet$art,levels=c("NAT","FZ"))
+groups <- factor(samplesheet$art,levels=c("NAT","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_nat_vs_fz<-topTable(fit.reduced,coef=3,number = Inf)
-dim(top_nat_vs_fz)
-head(top_nat_vs_fz)
-make_dm_plots(dm = top_nat_vs_fz ,name="top_nat_vs_fz" , mx= Mvalss, groups= group)
-
+top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz")
+head(top_nat_vs_fz$dm)
 ```
 
 ### NAT vs IUI
@@ -438,17 +429,10 @@ and ~36k with higher methylation.
 
 ```{r,nat_vs_iui}
 samplesheet <- subset(targets,art=="NAT" | art=="IUI")
-group <- factor(samplesheet$art,levels=c("NAT","IUI"))
+groups <- factor(samplesheet$art,levels=c("NAT","IUI"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_nat_vs_iui<-topTable(fit.reduced,coef=3,number = Inf)
-dim(top_nat_vs_iui)
-head(top_nat_vs_iui)
-make_dm_plots(dm = top_nat_vs_iui ,name="top_nat_vs_iui" , mx= Mvalss, groups= group)
+top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_iui")
+head(top_nat_vs_iui$dm)
 ```
 
 ### FH vs FZ
@@ -457,17 +441,10 @@ half lower and higher. This suggests that freezing has only a small effect on me
 
 ```{r,fh_vs_fz}
 samplesheet <- subset(targets,art=="FH" | art=="FZ")
-group <- factor(samplesheet$art,levels=c("FH","FZ"))
+groups <- factor(samplesheet$art,levels=c("FH","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_fh_vs_fz <- topTable(fit.reduced,coef=3,number = Inf)
-dim(top_fh_vs_fz)
-head(top_fh_vs_fz)
-make_dm_plots(dm = top_fh_vs_fz ,name="top_fh_vs_fz" , mx= Mvalss, groups= group)
+top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz")
+head(top_fh_vs_fz$dm)
 ```
 
 ### NAT vs FH/FZ
@@ -480,17 +457,11 @@ infant genome methylation.
 samplesheet <- subset(targets,art=="NAT" | art=="FH" | art=="FZ")
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
-group <- factor(samplesheet$art,levels=c("NAT","FX"))
+groups <- factor(samplesheet$art,levels=c("NAT","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_nat_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
-dim(top_nat_vs_fx)
-head(top_nat_vs_fx)
-make_dm_plots(dm = top_nat_vs_fx ,name="top_nat_vs_fx" , mx= Mvalss, groups= group)
+
+top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fx")
+head(top_nat_vs_fx$dm)
 ```
 
 ### IUI vs FH/FZ
@@ -507,17 +478,11 @@ or even the effect of hormone therapy.
 samplesheet <- subset(targets,art=="IUI" | art=="FH" | art=="FZ")
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
-group <- factor(samplesheet$art,levels=c("IUI","FX"))
+groups <- factor(samplesheet$art,levels=c("IUI","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-design <- model.matrix(~ sex + group)
-Mvalss <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-fit.reduced <- lmFit(Mvalss,design)
-fit.reduced <- eBayes(fit.reduced)
-summary(decideTests(fit.reduced))
-top_iui_vs_fx <- topTable(fit.reduced,coef=3,number = Inf)
-dim(top_iui_vs_fx)
-head(top_iui_vs_fx)
-make_dm_plots(dm = top_iui_vs_fx ,name="top_iui_vs_fx" , mx= Mvalss, groups= group)
+
+top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_iui_vs_fx")
+head(top_iui_vs_fx$dm)
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
@@ -602,14 +567,6 @@ heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.
 
 mycors
 ```
-
-## Generate heatmaps of the top N probes
-
-Heatmaps give us a visual idea as to how consistent the observed differential methylation patterns are for the top N genes.
-
-## Generate volcano plots
-
-Volcano plots give us an idea about how many differential genes were identified for a particular contrast.
 
 ## Genomic compartment analysis
 
