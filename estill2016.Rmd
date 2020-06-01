@@ -210,9 +210,9 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     length(dm_up)
     length(dm_dn)
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
-    make_dm_plots(dm = dm ,name="top_nat_vs_fh" , mx=beta, groups= groups, confects=confects)
+    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects)
-    
+
 }
 
 ```
