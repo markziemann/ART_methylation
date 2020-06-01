@@ -62,6 +62,7 @@ suppressPackageStartupMessages({
     library("R.utils")
     library("missMethyl")
     library("limma")
+    library("topconfects")
     library("minfi")
     library("IlluminaHumanMethylation450kmanifest")
     library("RColorBrewer")
@@ -74,6 +75,8 @@ suppressPackageStartupMessages({
   })
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
 
@@ -87,7 +90,7 @@ eventually be shoved into another Rscript or package but can stay here for now.
 # scree plot shows the amount of variation in a dataset that is accounted
 # for by the first N principal components
 myscree <- function(mx,n=10,main="") {
-  pc<-princomp(Mval)$sdev
+  pc <- princomp(mx)$sdev
   pcp <- pc/sum(pc)*100
   pcp <- pcp[1:10]
   barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),
@@ -143,7 +146,38 @@ make_beeswarms <- function(dm,name,mx,groups,n=15) {
 
     for (i in n) {
       mydat <- list(g1l[[i]],g2l[[i]])
-        beeswarm(mydat,ylim=c(-8,8),cex=0.2, pch=19,
+        beeswarm(mydat,ylim=c(0,1),cex=0.2, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
+
+# make beeswarm charts for best confects
+# dm = a limma differential meth object
+# name = character name of the limma dm object
+# mx = matrix of normalised data
+# groups = a vector of factors corresponding to the cols in mx
+# n = the number of top significant genes to plot (default = 15) 
+make_beeswarms_confects <- function(confects,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  head(confects$table,n)$name
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+
+    for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,ylim=c(0,1),cex=0.2, pch=19,
         las=2, cex.lab=0.6, main=names( g1l )[i] , 
         ylab="",labels = c(g1name,g2name))
       grid()
@@ -152,29 +186,34 @@ make_beeswarms <- function(dm,name,mx,groups,n=15) {
 
 # this is a wrapper which creates three charts
 # We will be adding more
-make_dm_plots <- function(dm,name,mx,groups=groups) {
+make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects) {
     make_volcano(dm,name,mx)
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mx ,n = 50)
+    make_beeswarms_confects(confects, name, mx, groups, n=15)
 }  
 
 # this is a function which will perform differential methylation analysis
 # if you provide it with the right inputs
-dm_analysis <- function(samplesheet,sex,groups,mx,name) {
+dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
+
     design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
+    mxs <- mx[,which( colnames(mx) %in% samplesheet$Basename )]
     fit.reduced <- lmFit(mxs,design)
     fit.reduced <- eBayes(fit.reduced)
     summary(decideTests(fit.reduced))
     dm <- topTable(fit.reduced,coef=3, number = Inf)
-    dm_up <- rownames(subset(top_nat_vs_fh,"adj.P.Val"<0.05 & "logFC">0))
-    dm_dn <- rownames(subset(top_nat_vs_fh,"adj.P.Val"<0.05 & "logFC"<0))
+    dma <- merge(myann,dm,by=0)
+    dma <- dma[order(dma$P.Value),]
+    dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
+    dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     length(dm_up)
     length(dm_dn)
-    make_dm_plots(dm = dm ,name="top_nat_vs_fh" , mx= Mvalss, groups= groups)
-    dat <- list("dm"=dm,"dm_up"=dm_up,"dm_dn"=dm_dn)
+    confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
+    make_dm_plots(dm = dm ,name="top_nat_vs_fh" , mx=beta, groups= groups, confects=confects)
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects)
+    
 }
-
 
 ```
 
@@ -199,17 +238,15 @@ if ( !dir.exists("IDAT") ) {
   dir.create("IDAT")
   download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE79257&format=file",
     destfile = ARRAY_DATA)
+    untar(exdir = "IDAT", tarfile = "GSE79257_RAW.tar",)
 }
-
-untar(exdir = "IDAT", tarfile = "GSE79257_RAW.tar",)
 
 baseDir <- "."
 targets <- read.metharray.sheet(baseDir)
-head(targets)
-
 rgSet <- read.metharray.exp(targets = targets)
 rgSet
-
+targets$Basename <- gsub("./IDAT/","",targets$Basename)
+head(targets)
 ```
 
 ## Normalisation
@@ -217,7 +254,7 @@ rgSet
 ```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
 mSet <- preprocessRaw(rgSet)
 mSetSw <- SWAN(mSet,verbose=FALSE)
-par(mfrow=c(1,2), cex=1.25)
+par(mfrow=c(1,2), cex=0.8)
 densityByProbeType(mSet[,1], main = "Raw")
 densityByProbeType(mSetSw[,1], main = "SWAN")
 ```
@@ -383,6 +420,20 @@ lumped together and provide more power to determine subtle effects of IVF.
 * __IUI vs FH+FZ__: It will be interesting to see whether the process of extracting eggs, culturing 
 and fertilising in vitro has an effect that is separate to IUI.
 
+The differential analysis is centred around limma to identify differentially methylated probes. 
+TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
+There are five outputs below:
+
+1. Volcano plot (limma result).
+
+2. Beeswarm plot (top probes by limma p-value).
+
+3. Heatmap (top probes by limma p-value).
+
+4. Beeswarm plot (top probes by topconfect ranking).
+
+5. Heatmap (top probes by topconfect ranking). (TODO)
+
 ### NAT vs FH
 In this first analysis I will look at the effect of natural conception versus IVF (fresh).
 I have conducted the differential analysis in parallel, both includng and excluding sex
@@ -393,22 +444,31 @@ now exclude sex chromosomes from downstream analysis.
 In the comparison of NAT and FH samples there were ~150k probes with differential methylation
 (FDR<0.05), with ~120k loss of methylation and ~30k with increased methylation.
 
-```{r,nat_vs_fh}
+```{r,nat_vs_fh_incl}
 
 # include sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
 groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval,name="top_nat_vs_fh_inc")
-head(top_nat_vs_fh_inc$dm)
 
+top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_nat_vs_fh_inc",
+    myann=myann ,beta= beta)
 
+head(top_nat_vs_fh_inc$dma)
+```
+
+```{r,nat_vs_fh_excl}
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
 group <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh")
-head(top_nat_vs_fh$dm)
+
+top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_fh$dma)
 ```
 
 ### NAT vs FZ
@@ -419,8 +479,12 @@ and ~37k with higher methylation.
 samplesheet <- subset(targets,art=="NAT" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("NAT","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz")
-head(top_nat_vs_fz$dm)
+
+top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_fz$dma)
 ```
 
 ### NAT vs IUI
@@ -431,8 +495,12 @@ and ~36k with higher methylation.
 samplesheet <- subset(targets,art=="NAT" | art=="IUI")
 groups <- factor(samplesheet$art,levels=c("NAT","IUI"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_iui")
-head(top_nat_vs_iui$dm)
+
+top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_iui",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_iui$dma)
 ```
 
 ### FH vs FZ
@@ -443,8 +511,12 @@ half lower and higher. This suggests that freezing has only a small effect on me
 samplesheet <- subset(targets,art=="FH" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("FH","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz")
-head(top_fh_vs_fz$dm)
+
+top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz",
+    myann=myann, beta=beta_flt)
+
+head(top_fh_vs_fz$dma)
 ```
 
 ### NAT vs FH/FZ
@@ -460,8 +532,11 @@ samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("NAT","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 
-top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fx")
-head(top_nat_vs_fx$dm)
+top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fx",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_fx$dma)
 ```
 
 ### IUI vs FH/FZ
@@ -481,37 +556,23 @@ samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("IUI","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 
-top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,sex=sex,groups=groups,mx=Mval_flt,name="top_iui_vs_fx")
-head(top_iui_vs_fx$dm)
+top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_iui_vs_fx",
+    myann=myann, beta=beta_flt)
+
+head(top_iui_vs_fx$dma)
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
-
-```{r,sets}
-top_nat_vs_fh_up <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC>0))
-top_nat_vs_fh_dn <- rownames(subset(top_nat_vs_fh,adj.P.Val<0.05 & logFC<0))
-
-top_nat_vs_fz_up <- rownames(subset(top_nat_vs_fz,adj.P.Val<0.05 & logFC>0))
-top_nat_vs_fz_dn <- rownames(subset(top_nat_vs_fz,adj.P.Val<0.05 & logFC<0))
-
-top_nat_vs_iui_up <- rownames(subset(top_nat_vs_iui,adj.P.Val<0.05 & logFC>0))
-top_nat_vs_iui_dn <- rownames(subset(top_nat_vs_iui,adj.P.Val<0.05 & logFC<0))
-
-top_nat_vs_fx_up <- rownames(subset(top_nat_vs_fx,adj.P.Val<0.05 & logFC>0))
-top_nat_vs_fx_dn <- rownames(subset(top_nat_vs_fx,adj.P.Val<0.05 & logFC<0))
-
-top_iui_vs_fx_up <- rownames(subset(top_iui_vs_fx,adj.P.Val<0.05 & logFC>0))
-top_iui_vs_fx_dn <- rownames(subset(top_iui_vs_fx,adj.P.Val<0.05 & logFC<0))
-```
 
 First, we look at the similarity of DMPs altered by fresh and frozen procedures. The overlap is very large.
 This indicates a high degree of similarity between the profiles.
 
 ```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
-v1 <- list("FH up" = top_nat_vs_fh_up , 
-           "FZ up" = top_nat_vs_fz_up ,
-           "FH dn" = top_nat_vs_fh_dn ,
-           "FZ dn" = top_nat_vs_fz_dn )
+v1 <- list("FH up" = top_nat_vs_fh$dm_up , 
+           "FZ up" = top_nat_vs_fz$dm_up ,
+           "FH dn" = top_nat_vs_fh$dm_dn ,
+           "FZ dn" = top_nat_vs_fz$dm_dn )
 plot(euler(v1, shape = "ellipse"), quantities = TRUE)
 ```
 
@@ -519,16 +580,16 @@ Now to take a look at whether IUI is similar to IVF fresh and frozen. The overla
 FH vs FZ.
 
 ```{r,venn2,fig.cap="Comparison of probes altered by IUI, fresh and frozen IVF procedures"}
-v2 <- list("FH up" = top_nat_vs_fh_up , 
-           "FH dn" = top_nat_vs_fh_dn ,
-           "IUI up" = top_nat_vs_iui_up ,
-           "IUI dn" = top_nat_vs_iui_dn )
+v2 <- list("FH up" = top_nat_vs_fh$dm_up , 
+           "FH dn" = top_nat_vs_fh$dm_dn ,
+           "IUI up" = top_nat_vs_iui$dm_up ,
+           "IUI dn" = top_nat_vs_iui$dm_dn )
 plot(euler(v2, shape = "ellipse"), quantities = TRUE)
 
-v3 <- list("FZ up" = top_nat_vs_fz_up , 
-           "FZ dn" = top_nat_vs_fz_dn ,
-           "IUI up" = top_nat_vs_iui_up ,
-           "IUI dn" = top_nat_vs_iui_dn )
+v3 <- list("FZ up" = top_nat_vs_fz$dm_up , 
+           "FZ dn" = top_nat_vs_fz$dm_dn ,
+           "IUI up" = top_nat_vs_iui$dm_up ,
+           "IUI dn" = top_nat_vs_iui$dm_dn )
 plot(euler(v3, shape = "ellipse"), quantities = FALSE)
 
 ```
@@ -540,19 +601,17 @@ the directional p-value ranking metric.
 
 ```{r,spearman}
 myranks <- function(x) {
-  x$score <- sign(x$logFC)/log10(x$adj.P.Val)
-  y <- x[,"score",drop=FALSE]
-  y$rn <- rownames(y)
+  xx<-x[[1]]
+  xx$score <- sign(xx$logFC)/log10(xx$adj.P.Val)
+  y <- xx[,"score",drop=FALSE]
+  y$rn <- xx$Row.names
   return(y)
 }
 
 mycontrasts <- list("top_nat_vs_fh"=top_nat_vs_fh, "top_nat_vs_fz"=top_nat_vs_fz, "top_nat_vs_fx"=top_nat_vs_fx ,
   "top_nat_vs_iui"=top_nat_vs_iui, "top_fh_vs_fz"=top_fh_vs_fz, "top_iui_vs_fx"=top_iui_vs_fx)
 
-str(mycontrasts)
-
 myrnks <- lapply(X = mycontrasts, FUN = myranks)
-
 df <- join_all(myrnks,by="rn")
 rownames(df) <- df$rn
 df$rn=NULL
