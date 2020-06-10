@@ -52,6 +52,9 @@ to those obtained in the original study, and
 In this report I will be using the missMethyl vignette as a guide to analyse this dataset 
 ([Phipson et al, 2015](https://www.ncbi.nlm.nih.gov/pubmed/26424855)).
 
+Previously I curated a list of good and bad probes using the script "filter_probes.Rmd".
+
+
 ## Loading packages
 
 These packackes will help us to perform vital steps such as normalisation, filtering, 
@@ -65,6 +68,7 @@ suppressPackageStartupMessages({
     library("topconfects")
     library("minfi")
     library("IlluminaHumanMethylation450kmanifest")
+    library("MethylToSNP")
     library("RColorBrewer")
     library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
     library("eulerr")
@@ -276,7 +280,20 @@ mSetSw <- mSetSw[keep,]
 # exclude sex chromosomes
 keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% 
                                                      c("chrX","chrY")])
+
 mSetFlt <- mSetSw[keep,]
+head(mSetFlt)
+dim(mSetFlt)
+
+# See Zhou et al, 2017. doi:10.1093/nar/gkw967
+good_probes <- read.table("probes_good.txt",stringsAsFactors = FALSE)
+good_probes <- good_probes$x
+head(good_probes)
+
+mSetFlt2 <- mSetFlt[which(featureNames(mSetFlt) %in% good_probes)]
+head(mSetFlt2)
+dim(mSetFlt2)
+
 ```
 
 ## Extracting Beta and M-values
@@ -297,6 +314,40 @@ beta_flt <- getBeta(mSetFlt)
 dim(Mval_flt)
 
 ```
+
+## Remove probes that appear to overlap SNP
+
+DOI: https://doi.org/10.1186/s13072-019-0321-6
+
+```{r,snpfilt}
+# include sex chromosomes
+# evidence of SNP
+snp_probe_dat <- MethylToSNP(beta, SNP=SNPs.147CommonSingle ,verbose=FALSE)
+dim(snp_probe_dat)
+head(snp_probe_dat)
+snp_probes <- rownames(snp_probe_dat)
+
+# >50% confidence of SNP
+nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+
+# remove SNP probes
+Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
+dim(Mval)
+
+# evidence of SNP
+snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
+dim(snp_probe_dat)
+head(snp_probe_dat)
+snp_probes <- rownames(snp_probe_dat)
+
+# >50% confidence of SNP
+nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+
+# remove SNP probes
+Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
+dim(Mval_flt)
+
+`````
 
 ## MDS analysis
 
