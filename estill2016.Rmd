@@ -223,7 +223,10 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
 TODO- add explanation
 
 ```{r,data}
-ARRAY_SAMPLESHEET="GSE79257_Illumina_samplesheet.csv"
+
+dir.create("GSE79257")
+
+ARRAY_SAMPLESHEET="GSE79257/GSE79257_Illumina_samplesheet.csv"
 # only download it if it is not present on the system
 if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
     DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
@@ -232,22 +235,23 @@ if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
     gunzip(DLFILE)
 }
 
-ARRAY_DATA="GSE79257_RAW.tar"
+ARRAY_DATA="GSE79257/GSE79257_RAW.tar"
 # only download it if it is not present on the system
-if ( !dir.exists("IDAT") ) {
-  dir.create("IDAT")
+if ( !dir.exists("GSE79257/IDAT") ) {
+  dir.create("GSE79257/IDAT")
   download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE79257&format=file",
     destfile = ARRAY_DATA)
-    untar(exdir = "IDAT", tarfile = "GSE79257_RAW.tar",)
+    untar(exdir = "IDAT", tarfile = ARRAY_DATA)
 }
 
-baseDir <- "."
+baseDir <- "GSE79257"
 targets <- read.metharray.sheet(baseDir)
 rgSet <- read.metharray.exp(targets = targets)
 rgSet
-targets$Basename <- gsub("./IDAT/","",targets$Basename)
+targets$Basename <- gsub("GSE79257/IDAT/","",targets$Basename)
 head(targets)
 ```
+
 
 ## Normalisation
 
