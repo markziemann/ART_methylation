@@ -1,0 +1,59 @@
+---
+title: "Filter probes"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## Introduction
+
+It is well known that some infinium probes have issues, such as overlapping SNPs, non-unique mapping or other problems.
+While analysing a recent dataset (Estill 2016), I saw that some of the methylation data appeared to be affected by SNPs, with distinct populations of normal/heterozyzous/homozygous variant.
+While this might be interesting from a genetic perspective, we should be filtering out these probes for methylation analysis.
+In this short workflow, I will use the advice from Zhou et al (2017) to create a list of probes that should be retained.
+While designed for use with EPIC arrays, this should also work for 450k array because most good probed in the 450k design are retained for EPIC.
+
+The list of good probes is called "good_probes.txt".
+
+The list of bad probes is called "bad_probes.txt".
+
+## Download data
+
+In the chunk here I'm downloading the supplementary data from the Zhou et al (2017)
+
+```{r dl}
+dir.create("filter_probes")
+
+download.file("https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5389466/bin/gkw967_supplementary_data.zip",destfile = "filter_probes/gkw967_supplementary_data.zip")
+
+unzip(zipfile = "filter_probes/gkw967_supplementary_data.zip", exdir = "filter_probes")
+
+unzip(zipfile = "filter_probes/nar-01910-met-k-2016-File009.zip",exdir = "filter_probes")
+
+x <- read.table("filter_probes/EPIC.anno.GRCh38.tsv", sep="\t", header=TRUE,stringsAsFactors = FALSE)
+head(x)
+names(x)
+dim(x)
+head(x$MASK.general)
+
+bad <- x[which(x$MASK.general==TRUE),"probeID"]
+head(bad)
+length(bad)
+write.table(bad,file="probes_bad.txt")
+write.table(bad,file="filter_probes/probes_bad.txt")
+
+good <- x[which(x$MASK.general==FALSE),"probeID"]
+head(good)
+length(good)
+write.table(good,file="probes_good.txt")
+write.table(good,file="filter_probes/probes_good.txt")
+
+```
+
+## Session info
+
+```{r,sessioninfo}
+sessionInfo()
+```
+
+## References
+Zhou W, Laird PW, Shen H. Comprehensive characterization, annotation and innovative use of Infinium DNA methylation BeadChip probes. Nucleic Acids Res. 2017;45(4):e22. doi:10.1093/nar/gkw967
