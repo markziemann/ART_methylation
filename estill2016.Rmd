@@ -254,6 +254,7 @@ rgSet <- read.metharray.exp(targets = targets)
 rgSet
 targets$Basename <- gsub("GSE79257/IDAT/","",targets$Basename)
 head(targets)
+
 ```
 
 
@@ -277,23 +278,18 @@ detP <- detectionP(rgSet)
 keep <- rowSums(detP < 0.01) == ncol(rgSet)
 mSetSw <- mSetSw[keep,]
 
-# exclude sex chromosomes
-keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% 
-                                                     c("chrX","chrY")])
+# exclude SNP probes
+mSetSw <- mapToGenome(mSetSw)
+mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+dim(mSetSw)
+dim(mSetSw_nosnp)
+mSetSw <- mSetSw_nosnp
 
+# exclude sex chromosomes
+keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
 mSetFlt <- mSetSw[keep,]
 head(mSetFlt)
 dim(mSetFlt)
-
-# See Zhou et al, 2017. doi:10.1093/nar/gkw967
-good_probes <- read.table("probes_good.txt",stringsAsFactors = FALSE)
-good_probes <- good_probes$x
-head(good_probes)
-
-mSetFlt2 <- mSetFlt[which(featureNames(mSetFlt) %in% good_probes)]
-head(mSetFlt2)
-dim(mSetFlt2)
-
 ```
 
 ## Extracting Beta and M-values
@@ -304,15 +300,12 @@ meth <- getMeth(mSetSw)
 unmeth <- getUnmeth(mSetSw)
 Mval <- log2((meth + 100)/(unmeth + 100))
 beta <- getBeta(mSetSw)
-dim(Mval)
 
 # exclude sex chromosomes
 meth <- getMeth(mSetFlt)
 unmeth <- getUnmeth(mSetFlt)
 Mval_flt <- log2((meth + 100)/(unmeth + 100))
 beta_flt <- getBeta(mSetFlt)
-dim(Mval_flt)
-
 ```
 
 ## Remove probes that appear to overlap SNP
@@ -320,33 +313,31 @@ dim(Mval_flt)
 DOI: https://doi.org/10.1186/s13072-019-0321-6
 
 ```{r,snpfilt}
+#testing
+#test <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4, SNP=SNPs.147CommonSingle #,verbose=FALSE)
+#nrow(test)
 # include sex chromosomes
 # evidence of SNP
-snp_probe_dat <- MethylToSNP(beta, SNP=SNPs.147CommonSingle ,verbose=FALSE)
-dim(snp_probe_dat)
-head(snp_probe_dat)
-snp_probes <- rownames(snp_probe_dat)
-
+#snp_probe_dat <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4,
+#    SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
 # >50% confidence of SNP
-nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
 # remove SNP probes
-Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
-dim(Mval)
-
+#Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
+#dim(Mval)
 # evidence of SNP
-snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
-dim(snp_probe_dat)
-head(snp_probe_dat)
-snp_probes <- rownames(snp_probe_dat)
-
+#snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
 # >50% confidence of SNP
-nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
 # remove SNP probes
-Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
-dim(Mval_flt)
-
+#Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
+#dim(Mval_flt)
 `````
 
 ## MDS analysis
