@@ -1,0 +1,84 @@
+---
+title: "Choufani"
+author: "The methylation in ART meta-analysis group"
+date: "6/10/2020"
+output: html_document
+---
+## Introduction
+
+## Loading packages
+```{r,packages}
+suppressPackageStartupMessages({
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("topconfects")
+    library("minfi")
+    library("IlluminaHumanMethylation450kmanifest")
+    library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+    library("reshape2")
+    library("beeswarm")
+    library("GEOquery")
+    library("readxl")
+    
+  })
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+
+```
+
+# Loading Functions
+```{r,packages}
+
+```
+
+# Data Import
+```{r,packages}
+#Create Dirtectory
+dir.create("GSE120250")
+ARRAY_SAMPLESHEET="GSE120250/GSE120250_series_matrix.txt.gz"
+# only download it if it is not present on the system
+if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
+    DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
+    download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE120nnn/GSE120250/matrix/GSE120250_series_matrix.txt.gz",
+        destfile = DLFILE)
+    gunzip(DLFILE)
+}
+
+# Reading in GEO series matrix
+if(!file.exists("GSE120250/GSE120250_series_matrix.txt.gz")){
+gse <- getGEO(filename="/mnt/mnorris/ART_methylation/GSE120250/GSE120250_series_matrix.txt.gz")
+}
+
+ARRAY_DATA="GSE120250/GSE120250_RAW.tar"
+# only download it if it is not present on the system
+if ( !dir.exists("GSE120250/IDAT") ) {
+  dir.create("GSE120250/IDAT")
+  download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE120250&format=file",
+    destfile = ARRAY_DATA)
+    untar(exdir = "GSE120250/IDAT", tarfile = "GSE120250/GSE120250_RAW.tar",)
+}
+
+
+baseDir <- "./GSE120250"
+targets <- pData(phenoData(gse))
+head(targets)
+mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,list.files("./GSE120250",pattern = "GSM",recursive = TRUE))))
+targets$Basename <- paste("GSE120250/", mybase, sep = "")
+rgSet <- read.metharray.exp(targets = targets)
+
+rgSet
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
