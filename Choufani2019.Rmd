@@ -1,0 +1,149 @@
+---
+title: "Choufani"
+author: "The methylation in ART meta-analysis group"
+date: "6/10/2020"
+output: html_document
+---
+## Introduction
+
+## Loading packages
+```{r,packages}
+suppressPackageStartupMessages({
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("topconfects463")
+    library("minfi")
+    library("IlluminaHumanMethylation450kmanifest")
+    library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+    library("reshape2")
+    library("beeswarm")
+    library("GEOquery")
+    library("readxl")
+    
+  })
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+
+```
+
+# Loading Functions
+```{r,packages}
+
+
+
+```
+
+# Data Import
+```{r,packages}
+#Create Dirtectory
+dir.create("GSE120250")
+ARRAY_SAMPLESHEET="GSE120250/GSE120250_series_matrix.txt.gz"
+# only download it if it is not present on the system
+if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
+    DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
+    download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE120nnn/GSE120250/matrix/GSE120250_series_matrix.txt.gz",
+        destfile = DLFILE)
+    gunzip(DLFILE)
+}
+
+# Reading in GEO series matrix
+if(!file.exists("GSE120250/GSE120250_series_matrix.txt.gz")){
+gse <- getGEO(filename="/mnt/mnorris/ART_methylation/GSE120250/GSE120250_series_matrix.txt.gz")
+}
+
+ARRAY_DATA="GSE120250/GSE120250_RAW.tar"
+# only download it if it is not present on the system
+if ( !dir.exists("GSE120250/IDAT") ) {
+  dir.create("GSE120250/IDAT")
+  download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE120250&format=file",
+    destfile = ARRAY_DATA)
+    untar(exdir = "GSE120250/IDAT", tarfile = "GSE120250/GSE120250_RAW.tar",)
+}
+
+
+baseDir <- "./GSE120250"
+targets <- pData(phenoData(gse))
+head(targets)
+mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,list.files("./GSE120250",pattern = "GSM",recursive = TRUE))))
+targets$Basename <- paste("GSE120250/", mybase, sep = "")
+
+
+rgSet <- read.metharray.exp(targets = targets)
+
+rgSet
+```
+```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
+mSet <- preprocessRaw(rgSet)
+mSetSw <- SWAN(mSet,verbose=FALSE)
+par(mfrow=c(1,2))
+densityByProbeType(mSet[,1], main = "Raw")
+densityByProbeType(mSetSw[,1], main = "SWAN")
+```
+## Filter probes
+
+Here we are running parallel analyses, both including and excluding sex chromosomes.
+
+```{r,filterprobes}
+# include sex chromosomes
+detP <- detectionP(rgSet)
+keep <- rowSums(detP < 0.01) == ncol(rgSet)
+mSetSw <- mSetSw[keep,]
+
+# exclude SNP probes
+mSetSw <- mapToGenome(mSetSw)
+mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+dim(mSetSw)
+dim(mSetSw_nosnp)
+mSetSw <- mSetSw_nosnp
+
+# exclude sex chromosomes
+keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
+mSetFlt <- mSetSw[keep,]
+head(mSetFlt)
+dim(mSetFlt)
+```
+
+## Extracting Beta and M-values
+
+```{r,beta_m_vals}
+# include sex chromosomes
+meth <- getMeth(mSetSw)
+unmeth <- getUnmeth(mSetSw)
+Mval <- log2((meth + 100)/(unmeth + 100))
+beta <- getBeta(mSetSw)
+
+# exclude sex chromosomes
+meth <- getMeth(mSetFlt)
+unmeth <- getUnmeth(mSetFlt)
+Mval_flt <- log2((meth + 100)/(unmeth + 100))
+beta_flt <- getBeta(mSetFlt)
+
+
+```
+
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
+sample_groups <- factor(targets$`art treatment:ch1`)
+
+```
+```
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
