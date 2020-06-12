@@ -70,10 +70,20 @@ targets <- pData(phenoData(gse))
 head(targets)
 mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,list.files("./GSE120250",pattern = "GSM",recursive = TRUE))))
 targets$Basename <- paste("GSE120250/", mybase, sep = "")
+
+
 rgSet <- read.metharray.exp(targets = targets)
 
 rgSet
 ```
+```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
+mSet <- preprocessRaw(rgSet)
+mSetSw <- SWAN(mSet,verbose=FALSE)
+par(mfrow=c(1,2), cex=0.8)
+densityByProbeType(mSet[,1], main = "Raw")
+densityByProbeType(mSetSw[,1], main = "SWAN")
+```
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
