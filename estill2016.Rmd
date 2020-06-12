@@ -677,6 +677,27 @@ mycors
 
 I would like to know whether the observed changes occurring are overrepresented at different genomic contexts.
 
+```{r,compartment}
+head(top_nat_vs_fz$dma)
+dma <- top_nat_vs_fz$dma
+head(dma)
+up <- subset(dma,logFC>0 & adj.P.Val<0.05)
+dn <- subset(dma,logFC<0 & adj.P.Val<0.05)
+
+all <- table(unique(dma)$Regulatory_Feature_Group)
+up <- table(unique(up)$Regulatory_Feature_Group)
+dn <- table(unique(dn)$Regulatory_Feature_Group)
+
+xx <- data.frame(all,up,dn)
+rownames(xx) <- xx[,1]
+rownames(xx)[1] = "None"
+xx[,c(1,3,5)]=NULL
+colnames(xx) <- c("all","up","dn")
+xx <- rbind(xx,"Total"=colSums(xx))
+xx
+xx[,1:2]
+```
+
 ## Todo
 * gene ontology / pathway analysis
 
