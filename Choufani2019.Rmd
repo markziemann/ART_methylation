@@ -32,10 +32,169 @@ myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
 
 ```
 
-# Loading Functions
+## Loading packages
+
+These packackes will help us to perform vital steps such as normalisation, filtering, 
+differential analysis, etc, and provide information about the array probe annotaions.
+
 ```{r,packages}
+suppressPackageStartupMessages({
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("topconfects")
+    library("minfi")
+    library("IlluminaHumanMethylation450kmanifest")
+    library("MethylToSNP")
+    library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+    library("reshape2")
+    library("beeswarm")
+  })
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
+```
 
 
+## Loading functions
+
+These functions provide shortcuts to help with charts and other analysis. They will
+eventually be shoved into another Rscript or package but can stay here for now.
+
+```{r,load_functions}
+
+# scree plot shows the amount of variation in a dataset that is accounted
+# for by the first N principal components
+myscree <- function(mx,n=10,main="") {
+  pc <- princomp(mx)$sdev
+  pcp <- pc/sum(pc)*100
+  pcp <- pcp[1:10]
+  barplot(pcp,cex.names = 1,las=2,ylim=c(0,60),
+      ylab="percent (%) variance explained", main=main)
+  text((0.5:length(pcp)*1.2),pcp,label=signif(pcp,3),pos=3,cex=0.8)
+}
+
+
+# Here is a function to make a volcano plot
+make_volcano <- function(dm,name,mx) {
+    sig <- subset(dm,adj.P.Val<0.05)
+    N_SIG=nrow(sig)
+    N_UP=nrow(subset(sig,logFC>0))
+    N_DN=nrow(subset(sig,logFC<0))
+    HEADER=paste(N_SIG,"@5%FDR,", N_UP, "up", N_DN, "dn")
+    plot(dm$logFC,-log10(dm$P.Val),cex=0.5,pch=19,col="darkgray",
+        main=name, xlab="log FC", ylab="-log10 pval")
+    mtext(HEADER)
+    grid()
+    points(sig$logFC,-log10(sig$P.Val),cex=0.5,pch=19,col="red")
+}
+
+# Here is a function to make heatmaps 
+make_heatmap <- function(dm,name,mx,n) {
+  topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
+  ss <- mx[which(rownames(mx) %in% topgenes),]
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
+      col=my_palette, main=name)
+}
+
+# make beeswarm charts
+# dm = a limma differential meth object
+# name = character name of the limma dm object
+# mx = matrix of normalised data
+# groups = a vector of factors corresponding to the cols in mx
+# n = the number of top significant genes to plot (default = 15) 
+make_beeswarms <- function(dm,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+
+    for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,ylim=c(0,1),cex=0.2, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
+
+# make beeswarm charts for best confects
+# dm = a limma differential meth object
+# name = character name of the limma dm object
+# mx = matrix of normalised data
+# groups = a vector of factors corresponding to the cols in mx
+# n = the number of top significant genes to plot (default = 15) 
+make_beeswarms_confects <- function(confects,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  head(confects$table,n)$name
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+
+    for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,ylim=c(0,1),cex=0.2, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
+
+# this is a wrapper which creates three charts
+# We will be adding more
+make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects) {
+    make_volcano(dm,name,mx)
+    make_beeswarms(dm ,name , mx , groups , n= 15)
+    make_heatmap(dm , name , mx ,n = 50)
+    make_beeswarms_confects(confects, name, mx, groups, n=15)
+}  
+
+# this is a function which will perform differential methylation analysis
+# if you provide it with the right inputs
+dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
+
+    design <- model.matrix(~ sex + groups)
+    mxs <- mx[,which( colnames(mx) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+    dm <- topTable(fit.reduced,coef=3, number = Inf)
+    dma <- merge(myann,dm,by=0)
+    dma <- dma[order(dma$P.Value),]
+    dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
+    dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
+    length(dm_up)
+    length(dm_dn)
+    confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
+    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects)
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects)
+
+}
 
 ```
 
@@ -69,14 +228,16 @@ if ( !dir.exists("GSE120250/IDAT") ) {
 
 baseDir <- "./GSE120250"
 targets <- pData(phenoData(gse))
-head(targets)
+
 mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,list.files("./GSE120250",pattern = "GSM",recursive = TRUE))))
 targets$Basename <- paste("GSE120250/", mybase, sep = "")
 
-
+head(targets$Basename)
 rgSet <- read.metharray.exp(targets = targets)
 
 rgSet
+
+head(rgSet)
 ```
 ```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
 mSet <- preprocessRaw(rgSet)
@@ -171,7 +332,7 @@ We wil begin with MDS analysis including the sex chromosomes and then exclude th
 First, let's quantify the contribution of the major principal components. with a scree plot, we can see 
 whether most of the variation is captured in the first two PCs or whether it is spread over more PCs.
 
-
+# Scree Plot
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 
 par(mfrow=c(2,1))  
@@ -180,12 +341,9 @@ myscree(Mval_flt,main="excl sex chr")
 
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
+# MDS by ART
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
-
 
 sample_groups <- factor(targets$characteristics_ch1.2)
 head(sample_groups)                        
@@ -193,10 +351,177 @@ colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets$art))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+par(mfrow=c(1,2)) 
 mydist <- plotMDS(Mval, labels=rownames(targets),col=colours,main="sex chromosomes included")
 mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex chromosomes excluded")
+
+```
+# MDS by Sex
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
+sample_groups <- factor(targets$characteristics_ch1.1)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$characteristics_ch1.1))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=rownames(targets),col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=rownames(targets) ,col=colours,main="sex chromosomes excluded")
+```
+
+# MDS by ART and sex
+```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
+targets$ARTgender <- paste(targets$`art treatment:ch1`,targets$`gender:ch1`, sep=("_"))
+
+targets$ARTgender
+sample_groups <- factor(targets$ARTgender)
+sample_groups
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$ARTgender))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=rownames(targets), col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=rownames(targets), col=colours,main="sex chromosomes excluded")
+
 ```
 
 
+## Differential analysis
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+There are a few differential contrasts that would be of interest to us in this study:
+
+* __NAT vs ART__: 
+
+* __NAT vs in vitro__: .
+
+* __NAT vs in vivo__: .
+
+* __in vivo vs in vitro__: 
+
+The differential analysis is centred around limma to identify differentially methylated probes. 
+TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
+There are five outputs below:
+
+1. Volcano plot (limma result).
+
+2. Beeswarm plot (top probes by limma p-value).
+
+3. Heatmap (top probes by limma p-value).
+
+4. Beeswarm plot (top probes by topconfect ranking).
+
+5. Heatmap (top probes by topconfect ranking). (TODO)
+
+# Nat vs In vivo
+```{r,nat_vs_invivo_incl}
+
+# include sex chromosomes
+
+samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+str(samplesheet)
+
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
+design <- model.matrix(~ sex + groups)
+    design
+    mxs <- meth[,which( colnames(meth) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+    
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+samplesheet
+
+head(samplesheet)
+
+top_NA_vs_invivo_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=methss,name="top_NA_vs_invivo_inc",
+    myann=myann ,beta= beta)
+
+head(top_NA_vs_invivo_inc)
+
+```
+
+
+```{r,nat_vs_invivo_excl}
+
+# exclude sex chromosomes
+samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_nat_vs_invivo_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_invivo_exc",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_invivo_exc)
+
+```
+
+# Nat vs In vitro
+```{r,nat_vs_invitro_incl}
+
+# include sex chromosomes
+samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
+
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_NA_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invitro_inc",
+    myann=myann ,beta= beta)
+
+head(top_NA_vs_invitro_inc)
+
+```
+```{r,nat_vs_fh_excl}
+
+# exclude sex chromosomes
+samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
+
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_nat_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_invitro_exc",
+    myann=myann, beta=beta_flt)
+
+head(top_nat_vs_invitro_exc)
+
+```
+
+# Nat vs ART
+
+# in vitro vs in vivo
+```{r,invivo_vs_invitro_incl}
+
+# include sex chromosomes
+samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
+
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_invivo_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_invivo_vs_invitro_inc",
+    myann=myann ,beta= beta)
+
+head(top_NA_vs_invitro_inc)
+
+```
+```{r,nat_vs_fh_excl}
+
+# exclude sex chromosomes
+samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
+
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_invivo_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_invivo_vs_invitro_exc",
+    myann=myann, beta=beta_flt)
+
+head(top_invivo_vs_invitro_exc)
+
+```
