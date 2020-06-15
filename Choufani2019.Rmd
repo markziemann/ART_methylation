@@ -413,115 +413,203 @@ There are five outputs below:
 
 # Nat vs In vivo
 ```{r,nat_vs_invivo_incl}
-
-# include sex chromosomes
-
+# Include Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 str(samplesheet)
 
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 
+ncol(mxs)
+nrow(samplesheet)
 design <- model.matrix(~ sex + groups)
     design
-    mxs <- meth[,which( colnames(meth) %in% samplesheet$Basename )]
+    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
     fit.reduced <- lmFit(mxs,design)
     fit.reduced <- eBayes(fit.reduced)
     summary(decideTests(fit.reduced))
-    
-groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
-sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-samplesheet
-
-head(samplesheet)
 
 top_NA_vs_invivo_inc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=methss,name="top_NA_vs_invivo_inc",
+    sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invivo_inc",
     myann=myann ,beta= beta)
 
 head(top_NA_vs_invivo_inc)
-
 ```
 
-
-```{r,nat_vs_invivo_excl}
-
-# exclude sex chromosomes
+```{r,nat_vs_invivo_exc}
+# Exclude Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 
-top_nat_vs_invivo_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_invivo_exc",
-    myann=myann, beta=beta_flt)
+design <- model.matrix(~ sex + groups)
+    mxs <- Mval_flt[,which( colnames(Mval) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
 
-head(top_nat_vs_invivo_exc)
+top_NA_vs_invivo_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invivo_exc",
+    myann=myann ,beta= beta)
 
+head(top_NA_vs_invivo_exc)
 ```
 
 # Nat vs In vitro
-```{r,nat_vs_invitro_incl}
-
-# include sex chromosomes
+```{r,nat_vs_invivo_incl}
+# Include Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+design <- model.matrix(~ sex + groups)
+    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
 
 top_NA_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invitro_inc",
     myann=myann ,beta= beta)
 
 head(top_NA_vs_invitro_inc)
-
 ```
-```{r,nat_vs_fh_excl}
 
-# exclude sex chromosomes
+```{r,nat_vs_invivo_incl}
+# Exclude Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 
-top_nat_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_invitro_exc",
-    myann=myann, beta=beta_flt)
 
-head(top_nat_vs_invitro_exc)
+design <- model.matrix(~ sex + groups)
+    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
 
+top_NA_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invitro_exc",
+    myann=myann ,beta= beta)
+
+head(top_NA_vs_invitro_exc)
 ```
 
 # Nat vs ART
+```{r,ART_vs_Control_incl}
+# Include Sex Chromosomes
+samplesheet <- targets
+samplesheet$title <- as.character(samplesheet$title)
+samplesheet$title <- (sapply(strsplit(samplesheet$title, " "), "[[", 1))
+samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet
+
+
+groups <- factor(samplesheet$title,levels=c("ART","Control"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+
+design <- model.matrix(~ sex + groups)
+    design
+    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+
+top_ART_vs_Control_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_ART_vs_Natural_inc",
+    myann=myann ,beta= beta)
+
+head(top_ART_vs_Natural_inc)
+```
+```{r,nat_vs_invivo_exc}
+# Exclude Sex Chromosomes
+samplesheet <- targets
+samplesheet$title <- as.character(samplesheet$title)
+samplesheet$title <- (sapply(strsplit(samplesheet$title, " "), "[[", 1))
+samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet
+
+
+groups <- factor(samplesheet$title,levels=c("ART","Control"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+
+design <- model.matrix(~ sex + groups)
+    design
+    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+
+top_NA_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_ART_vs_Natural_exc",
+    myann=myann ,beta= beta)
+
+head(top_ART_vs_Natural_exc)
+```
 
 # in vitro vs in vivo
 ```{r,invivo_vs_invitro_incl}
-
-# include sex chromosomes
+# Include Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+str(samplesheet)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+
+design <- model.matrix(~ sex + groups)
+    design
+    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
 
 top_invivo_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_invivo_vs_invitro_inc",
     myann=myann ,beta= beta)
 
-head(top_NA_vs_invitro_inc)
-
+head(top_invivo_vs_invitro_inc)
 ```
-```{r,nat_vs_fh_excl}
 
-# exclude sex chromosomes
+```{r,invivo_vs_invitro_exc}
+# Exclude Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+str(samplesheet)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 
+
+design <- model.matrix(~ sex + groups)
+    design
+    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+    summary(decideTests(fit.reduced))
+
 top_invivo_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_invivo_vs_invitro_exc",
-    myann=myann, beta=beta_flt)
+    myann=myann ,beta= beta)
 
 head(top_invivo_vs_invitro_exc)
-
 ```
+
+
+
+
+
+
+
