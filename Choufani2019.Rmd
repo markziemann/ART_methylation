@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
     library("R.utils")
     library("missMethyl")
     library("limma")
-    library("topconfects463")
+    library("topconfects")
     library("minfi")
     library("IlluminaHumanMethylation450kmanifest")
     library("RColorBrewer")
@@ -96,11 +96,11 @@ keep <- rowSums(detP < 0.01) == ncol(rgSet)
 mSetSw <- mSetSw[keep,]
 
 # exclude SNP probes
-mSetSw <- mapToGenome(mSetSw)
-mSetSw_nosnp <- dropLociWithSnps(mSetSw)
-dim(mSetSw)
-dim(mSetSw_nosnp)
-mSetSw <- mSetSw_nosnp
+#mSetSw <- mapToGenome(mSetSw)
+#mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+#dim(mSetSw)
+#dim(mSetSw_nosnp)
+#mSetSw <- mSetSw_nosnp
 
 # exclude sex chromosomes
 keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
@@ -127,6 +127,51 @@ beta_flt <- getBeta(mSetFlt)
 
 ```
 
+## Remove probes that appear to overlap SNP
+
+DOI: https://doi.org/10.1186/s13072-019-0321-6
+
+```{r,snpfilt}
+#testing
+#test <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4, SNP=SNPs.147CommonSingle #,verbose=FALSE)
+#nrow(test)
+# include sex chromosomes
+# evidence of SNP
+#snp_probe_dat <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4,
+#    SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
+# >50% confidence of SNP
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+# remove SNP probes
+#Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
+#dim(Mval)
+# evidence of SNP
+#snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
+# >50% confidence of SNP
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+# remove SNP probes
+#Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
+#dim(Mval_flt)
+```
+
+## MDS analysis
+
+[Multidimensional scaling(https://en.wikipedia.org/wiki/Multidimensional_scaling)  plot is a method used
+to identify the major sources of variation in a dataset. In the MDS plots below, I will be plotting the 
+first two dimensions (principal components [PCs]), with each sample label coloured either by ART 
+classification, sex, ART and sex, and then array chip and then sample plate. 
+
+We wil begin with MDS analysis including the sex chromosomes and then exclude them.
+
+First, let's quantify the contribution of the major principal components. with a scree plot, we can see 
+whether most of the variation is captured in the first two PCs or whether it is spread over more PCs.
+
+
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 
 par(mfrow=c(2,1))  
@@ -140,10 +185,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
-sample_groups <- factor(targets$`art treatment:ch1`)
 
+
+sample_groups <- factor(targets$characteristics_ch1.2)
+head(sample_groups)                        
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$art))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+mydist <- plotMDS(Mval, labels=rownames(targets),col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex chromosomes excluded")
 ```
-```
-```
+
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
