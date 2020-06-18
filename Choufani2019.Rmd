@@ -306,7 +306,12 @@ DOI: https://doi.org/10.1186/s13072-019-0321-6
 #dim(Mval_flt)
 ```
 
+## Removal of Outliers
+```{r, outliers}
 
+targets2 <- subset(targets,`outlier:ch1`=="N")
+
+```
 
 # MDS analysis
 
