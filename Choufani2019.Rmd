@@ -207,6 +207,7 @@ if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
 # Reading in GEO series matrix
 gse <- getGEO(filename="/mnt/mnorris/ART_methylation/GSE120250/GSE120250_series_matrix.txt.gz")
 
+
 ARRAY_DATA="GSE120250/GSE120250_RAW.tar"
 # only download it if it is not present on the system
 if ( !dir.exists("GSE120250/IDAT") ) {
