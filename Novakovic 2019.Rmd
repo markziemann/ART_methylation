@@ -13,9 +13,9 @@ suppressPackageStartupMessages({
     library("missMethyl")
     library("limma")
     library("minfi")
-    library("IlluminaHumanMethylation450kmanifest")
+    library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
     library("RColorBrewer")
-    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
     library("eulerr")
     library("plyr")
     library("gplots")
@@ -25,7 +25,14 @@ suppressPackageStartupMessages({
 library("Biobase")
   })
 ```
-  
+# Obtaining array annotations
+
+```{r,annotation}
+anno <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
+myann <- data.frame(anno[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+```
+
+
 ## Introduction
   
 This report is the reanalysis of first analysed DNA methylation data by
@@ -77,7 +84,7 @@ mSetSw <- mSetSw[keep,]
 mSetSw <- mapToGenome(mSetSw)
 mSetSw_nosnp <- dropLociWithSnps(mSetSw)
 # exclude sex chromosomes
-keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% 
+keep <- !(featureNames(mSetSw) %in% myann$Name[myann$chr %in% 
                                                      c("chrX","chrY")])
 mSetFlt <- mSetSw[keep,]
 ```
