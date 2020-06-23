@@ -1,5 +1,5 @@
 ---
-title: "Choufani"
+title: "Choufani Reanalysis"
 author: "The methylation in ART meta-analysis group"
 date: "6/10/2020"
 output: 
@@ -253,9 +253,6 @@ mSetSw <- mSetSw[keep,]
 # exclude sex chromosomes
 keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
 mSetFlt <- mSetSw[keep,]
-head(mSetFlt)
-dim(mSetFlt)
-targets
 ```
 
 ## Extracting Beta and M-values
@@ -312,8 +309,6 @@ DOI: https://doi.org/10.1186/s13072-019-0321-6
 ```{r, outliers}
 
 targets2 <- subset(targets,`outlier:ch1`=="N")
-head(targets2)
-head(Mval)
 colnames(Mval) <- sapply(strsplit(colnames(Mval), "_"), "[[", 1)
 colnames(Mval_flt) <- sapply(strsplit(colnames(Mval_flt), "_"), "[[", 1)
 Mval <- Mval[,which(colnames(Mval) %in% rownames(targets2))]
@@ -347,7 +342,6 @@ myscree(Mval_flt,main="excl sex chr")
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
 
 sample_groups <- factor(targets2$characteristics_ch1.2)
-head(sample_groups)                        
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets2$art))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
@@ -371,9 +365,7 @@ plotMDS(mydist_flt, labels=rownames(targets2) ,col=colours,main="sex chromosomes
 ```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
 targets2$ARTgender <- paste(targets$`art treatment:ch1`,targets2$`gender:ch1`, sep=("_"))
 
-targets2$ARTgender
 sample_groups <- factor(targets2$ARTgender)
-sample_groups
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets2$ARTgender))]
@@ -524,12 +516,39 @@ First, we look at the similarity of DMPs altered between in vivo and in vitro.
 ```{r,venn1,fig.cap="Figure 14:"}
 #v1 <- list("in vivo up" = top_NA_vs_invivo_exc$dm_up , 
 #           "in vitro up" = top_NA_vs_invitro_exc$dm_up ,
-#           "in vivo dn" = top_NA_vs_invivo_exc$dm_dn ,
-#           "in vitro dn" = top_NA_vs_invitro_exc$dm_dn )
+#          "in vivo dn" = top_NA_vs_invivo_exc$dm_dn ,
+#         "in vitro dn" = top_NA_vs_invitro_exc$dm_dn )
 #plot(euler(v1, shape = "ellipse"), quantities = TRUE)
 ```
 
 
+## Spearman correlations of each contrast
 
+```{r,spearman}
+myranks <- function(x) {
+  xx<-x[[1]]
+  xx$score <- sign(xx$logFC)/log10(xx$adj.P.Val)
+  y <- xx[,"score",drop=FALSE]
+  y$rn <- xx$Row.names
+  return(y)
+}
+
+mycontrasts <- list("top_NA_vs_invivo_exc" = top_NA_vs_invivo_exc,"top_NA_vs_invitro_exc" = top_NA_vs_invitro_exc, "top_ART_vs_Control_exc" = top_ART_vs_Control_exc, "top_invivo_vs_invitro_exc" = top_invivo_vs_invitro_exc)
+
+myrnks <- lapply(X = mycontrasts, FUN = myranks)
+df <- join_all(myrnks,by="rn")
+rownames(df) <- df$rn
+df$rn=NULL
+colnames(df) <- names(mycontrasts)
+head(df)
+
+mycors <- cor(df,method = "spearman")
+
+my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n = 25)
+heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
+    col=my_palette,main="Spearman correlations")
+
+mycors
+```
 
 
