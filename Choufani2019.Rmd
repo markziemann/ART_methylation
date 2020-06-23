@@ -222,7 +222,7 @@ targets <- pData(phenoData(gse))
 
 mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,list.files("./GSE120250",pattern = "GSM",recursive = TRUE))))
 targets$Basename <- paste("GSE120250/", mybase, sep = "")
-
+targets <- subset(targets,`outlier:ch1`=="N")
 head(targets$Basename)
 rgSet <- read.metharray.exp(targets = targets)
 ```
@@ -255,6 +255,7 @@ keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY
 mSetFlt <- mSetSw[keep,]
 head(mSetFlt)
 dim(mSetFlt)
+targets
 ```
 
 ## Extracting Beta and M-values
@@ -311,6 +312,12 @@ DOI: https://doi.org/10.1186/s13072-019-0321-6
 ```{r, outliers}
 
 targets2 <- subset(targets,`outlier:ch1`=="N")
+head(targets2)
+head(Mval)
+colnames(Mval) <- sapply(strsplit(colnames(Mval), "_"), "[[", 1)
+colnames(Mval_flt) <- sapply(strsplit(colnames(Mval_flt), "_"), "[[", 1)
+Mval <- Mval[,which(colnames(Mval) %in% rownames(targets2))]
+Mval_flt <- Mval_flt[,which(colnames(Mval_flt) %in% rownames(targets2))]
 
 ```
 
@@ -339,41 +346,41 @@ myscree(Mval_flt,main="excl sex chr")
 ## MDS by ART
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
 
-sample_groups <- factor(targets$characteristics_ch1.2)
+sample_groups <- factor(targets2$characteristics_ch1.2)
 head(sample_groups)                        
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-colours <- colour_palette[as.integer(factor(targets$art))]
+colours <- colour_palette[as.integer(factor(targets2$art))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-mydist <- plotMDS(Mval, labels=rownames(targets),col=colours,main="sex chromosomes included")
-mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex chromosomes excluded")
+mydist <- plotMDS(Mval, labels=rownames(targets2),col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets2),col=colours,main="sex chromosomes excluded")
 
 ```
 ## MDS by Sex
 ```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
-sample_groups <- factor(targets$characteristics_ch1.1)
+sample_groups <- factor(targets2$characteristics_ch1.1)
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-colours <- colour_palette[as.integer(factor(targets$characteristics_ch1.1))]
+colours <- colour_palette[as.integer(factor(targets2$characteristics_ch1.1))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-plotMDS(mydist, labels=rownames(targets),col=colours,main="sex chromosomes included")
-plotMDS(mydist_flt, labels=rownames(targets) ,col=colours,main="sex chromosomes excluded")
+plotMDS(mydist, labels=rownames(targets2),col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=rownames(targets2) ,col=colours,main="sex chromosomes excluded")
 ```
 
 ## MDS by ART and sex
 ```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
-targets$ARTgender <- paste(targets$`art treatment:ch1`,targets$`gender:ch1`, sep=("_"))
+targets2$ARTgender <- paste(targets$`art treatment:ch1`,targets2$`gender:ch1`, sep=("_"))
 
-targets$ARTgender
-sample_groups <- factor(targets$ARTgender)
+targets2$ARTgender
+sample_groups <- factor(targets2$ARTgender)
 sample_groups
 
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
-colours <- colour_palette[as.integer(factor(targets$ARTgender))]
+colours <- colour_palette[as.integer(factor(targets2$ARTgender))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-plotMDS(mydist, labels=rownames(targets), col=colours,main="sex chromosomes included")
-plotMDS(mydist_flt, labels=rownames(targets), col=colours,main="sex chromosomes excluded")
+plotMDS(mydist, labels=rownames(targets2), col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=rownames(targets2), col=colours,main="sex chromosomes excluded")
 
 ```
 
@@ -408,8 +415,10 @@ There are five outputs below:
 ```{r,nat_vs_in_vivo_incl,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6: Differential analysis: Naturally conceived vs in vivo including sex chromosomes"}
 
 # Include Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+samplesheet <- subset(targets2,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 design <- model.matrix(~ sex + groups)
@@ -417,6 +426,7 @@ design <- model.matrix(~ sex + groups)
     fit.reduced <- lmFit(mxs,design)
     fit.reduced <- eBayes(fit.reduced)
     summary(decideTests(fit.reduced))
+ 
 top_NA_vs_invivo_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invivo_inc",
     myann=myann ,beta= beta)
@@ -425,8 +435,10 @@ head(top_NA_vs_invivo_inc$dma)
 
 ```{r,nat_vs_in_vivo_exc, fig.width = 8 , fig.height = 8, fig.cap="Figure 7: Differential analysis: Naturally conceived vs in vivo excluding sex chromosomes"}
 # Exclude Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
+samplesheet <- subset(targets2,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 design <- model.matrix(~ sex + groups)
@@ -441,27 +453,13 @@ head(top_NA_vs_invivo_exc$dma)
 ```
 
 ## Nat vs In vitro
-```{r,nat_vs_in_vitro_incl, fig.width = 8 ,fig.height = 8, fig.cap="Figure 8: Differential analysis: Naturally conceived vs in vitro including sex chromosomes"}
-# Include Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
-sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
-top_NA_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invitro_inc",
-    myann=myann ,beta= beta)
-head(top_NA_vs_invitro_inc$dma)
-```
 
 ```{r,nat_vs_in_vitro_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Naturally conceived vs in vitro excluding sex chromosomes"}
 # Exclude Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
+samplesheet <- subset(targets2,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vitro")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 design <- model.matrix(~ sex + groups)
@@ -476,32 +474,16 @@ head(top_NA_vs_invitro_exc$dma)
 ```
 
 ## Nat vs ART
-```{r,ART_vs_Control_incl, fig.width = 8 ,fig.height = 8, fig.cap="Figure 10: Differential analysis: Naturally conceived vs ART including sex chromosomes"}
-# Include Sex Chromosomes
-samplesheet <- targets
-samplesheet$title <- as.character(samplesheet$title)
-samplesheet$title <- (sapply(strsplit(samplesheet$title, " "), "[[", 1))
-samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-groups <- factor(samplesheet$title,levels=c("ART","Control"))
-sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
-top_ART_vs_Control_inc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval,name="top_ART_vs_Natural_inc",
-    myann=myann ,beta= beta)
-head(top_ART_vs_Control_inc$dma)
-```
+
 ```{r,ART_vs_Control_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 11: Differential analysis: Naturally conceived vs ART excluding sex chromosomes"}
 # Exclude Sex Chromosomes
-samplesheet <- targets
+samplesheet <- targets2
 samplesheet$title <- as.character(samplesheet$title)
 samplesheet$title <- (sapply(strsplit(samplesheet$title, " "), "[[", 1))
 samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$title,levels=c("ART","Control"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 design <- model.matrix(~ sex + groups)
@@ -516,27 +498,13 @@ head(top_ART_vs_Control_exc$dma)
 ```
 
 ## in vitro vs in vivo
-```{r,in_vivo_vs_in_vitro_incl,fig.width = 8 ,fig.height = 8, fig.cap="Figure 12: Differential analysis: in vitro vs in vivo including sex chromosomes"}
-# Include Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
-sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
-top_invivo_vs_invitro_inc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval,name="top_invivo_vs_invitro_inc",
-    myann=myann ,beta= beta)
-head(top_invivo_vs_invitro_inc$dma)
-```
+
 
 ```{r,in_vivo_vs_in_vitro_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 13: Differential analysis: in vitro vs in vivo excluding sex chromosomes"}
 # Exclude Sex Chromosomes
-samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
+samplesheet <- subset(targets2,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 design <- model.matrix(~ sex + groups)
