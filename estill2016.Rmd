@@ -678,6 +678,8 @@ mycors
 I would like to know whether the observed changes occurring are overrepresented at different genomic contexts.
 
 ```{r,compartment}
+save.image("estill2016.Rdata")
+
 head(top_nat_vs_fz$dma)
 dma <- top_nat_vs_fz$dma
 head(dma)
@@ -696,6 +698,8 @@ colnames(xx) <- c("all","up","dn")
 xx <- rbind(xx,"Total"=colSums(xx))
 xx
 xx[,1:2]
+
+save.image("estill2016.Rdata")
 ```
 
 ## Todo
@@ -726,3 +730,10 @@ Tian Y, Morris TJ, Webster AP, Yang Z, Beck S, Feber A, Teschendorff AE.
 ChAMP: updated methylation analysis pipeline for Illumina BeadChips.
 Bioinformatics. 2017 Dec 15;33(24):3982-3984. doi: 10.1093/bioinformatics/btx513.
 PubMed PMID: 28961746; PubMed Central PMCID: PMC5860089.
+
+## Session info
+
+```{r,sessioninfo}
+sessionInfo()
+
+```
