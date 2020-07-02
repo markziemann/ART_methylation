@@ -126,3 +126,41 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
 
 }
 
+# Spearman ranks
+myranks <- function(x) {
+  xx<-x[[1]]
+  xx$score <- sign(xx$logFC)/log10(xx$adj.P.Val)
+  y <- xx[,"score",drop=FALSE]
+  y$rn <- xx$Row.names
+  return(y)
+}
+
+# enrichment analysis functions
+run_mitch_rank <-function(dma){
+  dmap <- dma[grep("Promoter_Associated",dma$Regulatory_Feature_Group),]
+  dmap[which(dmap$UCSC_RefGene_Name==""),2] <- "NA"
+  dmap$genename <- sapply(strsplit(dmap$UCSC_RefGene_Name,";"),"[[",1)
+  dmap2 <- dmap[,c("genename","t")]
+  #rank <- aggregate(. ~ genename,dmap2,function(x) { 
+  #  x[which.max(abs(x))]
+  #  } )
+  rank <- aggregate(. ~ genename,dmap2,mean)
+  rownames(rank) <- rank$genename
+  rank$genename=NULL
+  return(rank)
+}
+
+run_mitch_1d <- function(dma,name) {
+  library("mitch")
+  rank <- run_mitch_rank(dma)
+  capture.output(
+    res <- mitch_calc(x = rank,genesets = genesets, priority = "significance",resrows=20)
+    , file = "/dev/null", append = FALSE,
+    type = c("output", "message"), split = FALSE)
+  head(res$enrichment_result,20)
+  capture.output(
+    mitch_plots(res,outfile=paste(name,".pdf"))
+    , file = "/dev/null", append = FALSE,
+    type = c("output", "message"), split = FALSE)
+  return(res$enrichment_result)
+}
