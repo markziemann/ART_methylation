@@ -549,6 +549,7 @@ heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.
     col=my_palette,main="Spearman correlations")
 
 mycors
+
 ```
 
 
