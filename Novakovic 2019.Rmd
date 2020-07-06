@@ -7,13 +7,14 @@ output:
   toc: true
 theme: cosmo
 ---
+
 ```{r,packages}
 suppressPackageStartupMessages({
     library("R.utils")
     library("missMethyl")
     library("limma")
     library("minfi")
-    library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
+    library("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
     library("RColorBrewer")
     library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
     library("eulerr")
@@ -24,6 +25,7 @@ suppressPackageStartupMessages({
   library("GEOquery")
 library("Biobase")
   })
+source("meth_functions.R")
 ```
 # Obtaining array annotations
 
@@ -49,7 +51,8 @@ if(!dir.exists("IDAT")){
   untar(exdir = "IDAT", tarfile = "GSE131433_RAW.tar",)
 }
   SERIES_MATRIX="GSE1311433_series_matrix.txt.gz"
-download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz",destfile=SERIES_MATRIX)
+download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz", 
+  destfile=SERIES_MATRIX)
 
 
 if(!file.exists("GSE1311433_series_matrix.txt.gz")){
@@ -105,5 +108,24 @@ beta_flt <- getBeta(mSetFlt)
 dim(Mval_flt)
 
 ```
+# MDS analysis
 
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
+```
 
+#MDS plot 1
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
+targets$sex<-factor(targets$`gender:ch1`)
+targets$art<-factor(targets$`art subtype`)
+sample_groups <- factor(targets$art)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$art))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+```
