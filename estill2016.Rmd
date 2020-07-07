@@ -617,7 +617,6 @@ head(top_iui_vs_fx_mitch,50)
 # Run multi-dimensional enrichment analysis
 
 ```{r,mitch}
-One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
 
 xl <- list("nat_vs_fh"=top_nat_vs_fh$dma, "top_nat_vs_fz"=top_nat_vs_fz$dma, "top_nat_vs_iui"=top_nat_vs_iui$dma,
            "top_fh_vs_fz"=top_fh_vs_fz$dma,"top_nat_vs_fx"=top_nat_vs_fx$dma, "top_iui_vs_fx"=top_iui_vs_fx$dma)
@@ -636,6 +635,7 @@ capture.output(
 
 head(res$enrichment_result,20)
 
+unlink("mitch_report.html")
     capture.output(
         mitch_report(res,outfile=paste("mitch_report.html"))
         , file = "/dev/null", append = FALSE,
@@ -645,6 +645,7 @@ head(res$enrichment_result,20)
 
 ## Todo
 
+* Peak calling with DMRcate
 * repeat elements / GWAM
 
 ## References
