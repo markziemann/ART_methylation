@@ -7,13 +7,14 @@ output:
   toc: true
 theme: cosmo
 ---
+
 ```{r,packages}
 suppressPackageStartupMessages({
     library("R.utils")
     library("missMethyl")
     library("limma")
     library("minfi")
-    library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
+    library("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
     library("RColorBrewer")
     library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
     library("eulerr")
@@ -21,9 +22,11 @@ suppressPackageStartupMessages({
     library("gplots")
     library("reshape2")
     library("beeswarm")
-  library("GEOquery")
-library("Biobase")
+    library("GEOquery")
+    library("Biobase")
+    library("topconfects")
   })
+source("meth_functions.R")
 ```
 # Obtaining array annotations
 
@@ -49,7 +52,8 @@ if(!dir.exists("IDAT")){
   untar(exdir = "IDAT", tarfile = "GSE131433_RAW.tar",)
 }
   SERIES_MATRIX="GSE1311433_series_matrix.txt.gz"
-download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz",destfile=SERIES_MATRIX)
+download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz", 
+  destfile=SERIES_MATRIX)
 
 
 if(!file.exists("GSE1311433_series_matrix.txt.gz")){
@@ -105,5 +109,73 @@ beta_flt <- getBeta(mSetFlt)
 dim(Mval_flt)
 
 ```
+# MDS analysis
+
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
+```
+
+#MDS plot 1
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
+colnames(targets) <- gsub(" ","_",colnames(targets)) 
+colnames(targets) <- gsub(":","_",colnames(targets))
+targets$sex<-factor(targets$`gender_ch1`)
+targets$art<-factor(targets$`art_subtype`)
+sample_groups <- factor(targets$art)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$art))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+```
 
 
+
+#Differential analysis
+1. non-ART Vs Fresh embryo
+
+2. non-ART Vs Frozen embryo
+
+3. non-ART Vs GIFT
+
+4. non-ART Vs FX
+
+5. GIFT Vs FX
+
+6. non-ART Vs ART
+
+7. Fresh Vs Frozen
+
+
+```{r,dm1}
+targets$Basename <- gsub("IDAT/","",targets$Basename)  
+birth<-targets[which(targets$`time_of_collection`=="birth"),]
+samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Fresh embryo")
+groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+
+top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
+myann=myann ,beta= betas) 
+head(top_nat_vs_fh$dma,10)
+```
+
+```{r,dm2}
+samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo")
+groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
+myann=myann ,beta= betas)
+head(top_nat_vs_fz$dma,10)
+```
