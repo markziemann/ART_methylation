@@ -442,7 +442,7 @@ head(top_NAT_vs_ICSI$dma)
 
 
 ## Natural vs IUI
-#```{r,NA_vs_IUI, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Naturally conceived vs IUI excluding sex chromosomes"}
+```{r,NA_vs_IUI, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Naturally conceived vs IUI excluding sex chromosomes"}
 # Exclude Sex Chromosomes
 #samplesheet <- subset(targets, `Details.ART`=="NA" | `Details.ART`=="IUI")
 #samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
@@ -459,7 +459,7 @@ head(top_NAT_vs_ICSI$dma)
 #    sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_IUI",
 #    myann=myann ,beta= beta)
 #head(top_NA_vs_IUI$dma)
-#```
+```
 
 ## ICSI vs IUI
 ```{r,ICSI_vs_IUI_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: ICSI vs IUI excluding sex chromosomes"}
@@ -563,7 +563,9 @@ head(top_ICSI_vs_IUI_mitch,50)
 ```
 
 ## Run multi-dimensional enrichment analysis
-#```{r,mitch}
+
+
+```{r,mitch}
 #One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
 
 #xl <- list("NA_vs_invitro"=top_NA_vs_invitro_exc, "top_NA_vs_invivo"=top_NA_vs_invivo_exc$dma, "top_invivo_vs_invitro"=top_invivo_vs_invitro_exc$dma,
