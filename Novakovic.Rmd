@@ -132,7 +132,10 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
 mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 ```
-
+#save data object
+```{r,save}
+save.image("Novakovic.Rdata")
+```
 
 
 #Differential analysis
@@ -155,7 +158,7 @@ mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex
 targets$Basename <- gsub("IDAT/","",targets$Basename)  
 birth<-targets[which(targets$`time_of_collection`=="birth"),]
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Fresh embryo")
-groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
+groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Fresh embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
@@ -179,3 +182,18 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
 myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
 ```
+
+```{r,dm3}
+samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="GIFT")
+groups <- factor(samplesheet$art_subtype,levels=c("non-ART","GIFT"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+top_nat_vs_GFT <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GFT",
+myann=myann ,beta= betas)
+head(top_nat_vs_GFT$dma,10)
+```
+
+
