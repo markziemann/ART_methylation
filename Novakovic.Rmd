@@ -196,4 +196,31 @@ myann=myann ,beta= betas)
 head(top_nat_vs_GFT$dma,10)
 ```
 
+```{r,dm4}
+samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="FX")
+groups <- factor(samplesheet$art_subtype,levels=c("non-ART","FX"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
 
+
+top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
+myann=myann ,beta= betas)
+head(top_nat_vs_Fx$dma,10)
+```
+
+
+```{r,dm5}
+samplesheet<-subset(birth,art_subtype_ch1=="GFT"|art_subtype_ch1=="FX")
+groups <- factor(samplesheet$art_subtype,levels=c("GFT","FX"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+
+top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
+myann=myann ,beta= betas)
+head(top_nat_vs_FX$dma,10)
+```
