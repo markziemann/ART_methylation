@@ -1,0 +1,45 @@
+---
+title: "Introduction"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+Source: https://github.com/markziemann/ART_methylation/introduction.Rmd
+
+## Outline
+
+1. What is ART?
+
+2. Why is ART implicated with epigenetic differences?
+
+3. What is the evidence that ART is implicated in epigenetic differences?
+
+4. What are the current controversies?
+
+5. What is the aim and rationale of this study?
+
+## Key references:
+
+* https://www.nature.com/articles/s41467-019-11929-9
+
+* https://pubmed.ncbi.nlm.nih.gov/27288894/
+
+## Background
+
+Assisted reproductive technology (ART) is a group of medical procedures to enable conception due to reduced fertlity.
+It includes
+
+* Fertility medication (ovulation induction)
+
+* Gamete intra-fallopian transfer (GIFT) 
+
+* Intra-uterine insemination (IUI)
+
+* In vitro fertilization (IVF)
+
+* Intracytoplasmic sperm injection (ICSI)
+
