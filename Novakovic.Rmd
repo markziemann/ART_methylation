@@ -153,7 +153,7 @@ save.image("Novakovic.Rdata")
 
 7. Fresh Vs Frozen
 
-
+### non-ART Vs Fresh embryo
 ```{r,dm1}
 targets$Basename <- gsub("IDAT/","",targets$Basename)  
 birth<-targets[which(targets$`time_of_collection`=="birth"),]
@@ -163,13 +163,13 @@ sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
 
-
 top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
 myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
 ```
 
+### non-ART Vs Frozen embryo
 ```{r,dm2}
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
@@ -183,6 +183,7 @@ myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
 ```
 
+### non-ART Vs GIFT
 ```{r,dm3}
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="GIFT")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","GIFT"))
@@ -190,37 +191,74 @@ sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
 
-top_nat_vs_GFT <- dm_analysis(samplesheet=samplesheet,
-sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GFT",
+top_nat_vs_GIFT <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
 myann=myann ,beta= betas)
-head(top_nat_vs_GFT$dma,10)
+head(top_nat_vs_GIFT$dma,10)
 ```
 
+### non-ART Vs FX
 ```{r,dm4}
-samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="FX")
+samplesheet <- subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo" | art_subtype_ch1=="Fresh embryo")
+samplesheet$art_subtype <- gsub("Fresh embryo","FX",samplesheet$art_subtype)
+samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","FX"))
+
 sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
-
-
-top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
-sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
-myann=myann ,beta= betas)
-head(top_nat_vs_Fx$dma,10)
-```
-
-
-```{r,dm5}
-samplesheet<-subset(birth,art_subtype_ch1=="GFT"|art_subtype_ch1=="FX")
-groups <- factor(samplesheet$art_subtype,levels=c("GFT","FX"))
-sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
-
 
 top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
 myann=myann ,beta= betas)
 head(top_nat_vs_FX$dma,10)
 ```
+
+
+### GIFT Vs FX
+```{r,dm5}
+samplesheet <- subset(birth,art_subtype_ch1=="GIFT"|art_subtype_ch1=="Frozen embryo" | art_subtype_ch1=="Fresh embryo")
+samplesheet$art_subtype <- gsub("Fresh embryo","FX",samplesheet$art_subtype)
+samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
+groups <- factor(samplesheet$art_subtype,levels=c("GIFT","FX"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+
+top_GIFT_vs_FX <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
+myann=myann ,beta= betas)
+head(top_GIFT_vs_FX$dma,10)
+```
+
+### non-ART Vs ART
+```{r,dm6}
+samplesheet<-birth
+groups <- factor(samplesheet$art_status,levels=c("non-ART","ART"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+
+top_nat_vs_ART <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
+myann=myann ,beta= betas)
+head(top_nat_vs_ART$dma,10)
+```
+
+### Fresh embryo Vs Frozen embryo
+```{r,dm7}
+samplesheet <- subset(birth,art_subtype_ch1=="Fresh embryo"|art_subtype_ch1=="Frozen embryo")
+groups <- factor(samplesheet$art_subtype,levels=c("Fresh embryo","Frozen embryo"))
+sex <- factor(samplesheet$sex,levels=c("M","F"))
+Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
+betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+
+
+top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
+sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
+myann=myann ,beta= betas)
+head(top_fh_vs_fz$dma,10)
+```
+
