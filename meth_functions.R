@@ -115,13 +115,44 @@ make_beeswarms_confects <- function(confects,name,mx,groups,n=15) {
     }
 }
 
+## Rcircos
+make_circos <- function(dmr) {
+  par(mfrow=c(1,1))
+  dmrbed <- data.frame(seqnames=seqnames(dmr),
+                       starts=start(dmr)-1,
+                       ends=end(dmr),
+                       names=elementMetadata(dmr)[,8],
+                       scores=elementMetadata(dmr)[,7],
+                       strands=strand(dmr))
+  
+  elementMetadata(dmr)[,7]
+  
+  # lets try a circos plot
+  data(UCSC.HG19.Human.CytoBandIdeogram)
+  chr.exclude <- c("chrX","chrY")
+  cyto.info <- UCSC.HG19.Human.CytoBandIdeogram
+  tracks.inside <- 1
+  tracks.outside <- 0
+  RCircos.Set.Core.Components(cyto.info, chr.exclude,
+                              tracks.inside, tracks.outside)
+  plot.new()
+  par(mai=c(0, 0, 0, 0))
+  data(RCircos.Tile.Data)
+  track.num <- 1;
+  side <- "in";
+  RCircos.Set.Plot.Area(margins = 0)
+  RCircos.Tile.Plot(dmrbed, track.num, side)
+  RCircos.Chromosome.Ideogram.Plot(tick.interval = 10000)
+}
+
 # this is a wrapper which creates three charts
 # We will be adding more
-make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects) {
+make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr) {
     make_volcano(dm,name,mx)
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mx ,n = 50)
     make_beeswarms_confects(confects, name, mx, groups, n=15)
+    make_circos(dmr = dmr)
 }  
 
 # this function performs DMRcate for peak calling
@@ -144,10 +175,10 @@ run_dmrcate <- function(mx=mxs,design=design) {
 }
 
 
+
 # this is a function which will perform differential methylation analysis
 # if you provide it with the right inputs
 dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
-
     design <- model.matrix(~ sex + groups)
     mxs <- mx[,which( colnames(mx) %in% samplesheet$Basename )]
     fit.reduced <- lmFit(mxs,design)
@@ -163,7 +194,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
     dmr <- run_dmrcate(mx=mxs,design=design) 
     head(dmr)
-    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects)
+    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr)
     return(dat)
 }

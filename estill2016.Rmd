@@ -424,31 +424,7 @@ top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_iui_vs_fx$dma)
-dmr <- top_iui_vs_fx$dmr
-head(dmr)
-
-# lets try a circos plot
-data(UCSC.HG19.Human.CytoBandIdeogram)
-head(UCSC.HG19.Human.CytoBandIdeogram)
-
-
-chr.exclude <- NULL
-cyto.info <- UCSC.HG19.Human.CytoBandIdeogram
-tracks.inside <- 1
-tracks.outside <- 0
-RCircos.Set.Core.Components(cyto.info, chr.exclude,
-tracks.inside, tracks.outside)
-
-plot.new()
-par(mai=c(0, 0, 0, 0))
-RCircos.Chromosome.Ideogram.Plot(UCSC.HG19.Human.CytoBandIdeogram)
-data(RCircos.Tile.Data)
-
-track.num <- 1;
-side <- "in";
-RCircos.Set.Plot.Area(margins = 0)
-RCircos.Tile.Plot(RCircos.Tile.Data, track.num, side)
-RCircos.Chromosome.Ideogram.Plot(UCSC.HG19.Human.CytoBandIdeogram)
+head(top_iui_vs_fx$dmr)
 
 ```
 
