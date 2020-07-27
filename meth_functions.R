@@ -152,28 +152,8 @@ make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr) {
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mx ,n = 50)
     make_beeswarms_confects(confects, name, mx, groups, n=15)
-    make_circos(dmr = dmr)
+    make_circos( dmr = dmr)
 }  
-
-# this function performs DMRcate for peak calling
-run_dmrcate <- function(mx=mxs,design=design) {
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-
-    dmg <- makeGenomicRatioSetFromMatrix(mxs, rownames = NULL, pData = NULL ,
-        array = "IlluminaHumanMethylation450k" ,
-        mergeManifest = FALSE, what = "M")
-    
-    myannotation <- cpg.annotate("array", dmg, arraytype = "450K",
-        analysis.type="differential", design=design, coef=3)
-
-    dmrcoutput <- dmrcate(myannotation, lambda=1000, C=3)
-
-    dmr <- extractRanges(dmrcoutput, genome = "hg19")
-
-    return(dmr)
-}
-
 
 
 # this is a function which will perform differential methylation analysis
@@ -198,6 +178,29 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr)
     return(dat)
 }
+
+# this function performs DMRcate for peak calling
+run_dmrcate <- function(mx,design) {
+  fit.reduced <- lmFit(mx,design)
+  fit.reduced <- eBayes(fit.reduced)
+  
+  dmg <- makeGenomicRatioSetFromMatrix(mx, rownames = NULL, pData = NULL ,
+                                       array = "IlluminaHumanMethylation450k" ,
+                                       mergeManifest = FALSE, what = "M")
+  
+  myannotation <- cpg.annotate("array", dmg, arraytype = "450K",
+                               analysis.type="differential", design=design, coef=3)
+  
+  dmrcoutput <- dmrcate(myannotation, lambda=1000, C=3)
+  
+  dmr <- extractRanges(dmrcoutput, genome = "hg19")
+  
+  return(dmr)
+}
+
+
+
+
 
 # Spearman ranks
 myranks <- function(x) {

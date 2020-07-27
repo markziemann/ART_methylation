@@ -319,6 +319,7 @@ top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
     myann=myann ,beta= beta)
 
 head(top_nat_vs_fh_inc$dma)
+head(top_nat_vs_fh_inc$dmr)
 ```
 
 ```{r,nat_vs_fh_excl}
@@ -332,6 +333,7 @@ top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_nat_vs_fh$dma)
+head(top_nat_vs_fh$dmr)
 ```
 
 ### NAT vs FZ
@@ -348,6 +350,7 @@ top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_nat_vs_fz$dma)
+head(top_nat_vs_fz$dmr)
 ```
 
 ### NAT vs IUI
@@ -364,6 +367,7 @@ top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_nat_vs_iui$dma)
+head(top_nat_vs_iui$dmr)
 ```
 
 ### FH vs FZ
@@ -380,6 +384,7 @@ top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_fh_vs_fz$dma)
+head(top_fh_vs_fz$dmr)
 ```
 
 ### NAT vs FH/FZ
@@ -400,6 +405,7 @@ top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,
     myann=myann, beta=beta_flt)
 
 head(top_nat_vs_fx$dma)
+head(top_nat_vs_fx$dmr)
 ```
 
 ### IUI vs FH/FZ
