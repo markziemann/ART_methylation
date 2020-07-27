@@ -31,7 +31,7 @@ Source: https://github.com/markziemann/ART_methylation/introduction.Rmd
 ## Background
 
 Assisted reproductive technology (ART) is a group of medical procedures to enable conception due to reduced fertlity.
-It includes
+It includes:
 
 * Fertility medication (ovulation induction)
 

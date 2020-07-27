@@ -1,3 +1,23 @@
+suppressPackageStartupMessages({
+  library("plyr")
+  library("R.utils")
+  library("missMethyl")
+  library("limma")
+  library("DMRcate")
+  library("topconfects")
+  library("minfi")
+  library("IlluminaHumanMethylation450kmanifest")
+  library("RColorBrewer")
+  library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+  library("eulerr")
+  library("plyr")
+  library("gplots")
+  library("reshape2")
+  library("beeswarm")
+  library("RCircos")
+})
+
+
 # scree plot shows the amount of variation in a dataset that is accounted
 # for by the first N principal components
 myscree <- function(mx,n=10,main="") {
@@ -104,6 +124,26 @@ make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects) {
     make_beeswarms_confects(confects, name, mx, groups, n=15)
 }  
 
+# this function performs DMRcate for peak calling
+run_dmrcate <- function(mx=mxs,design=design) {
+    fit.reduced <- lmFit(mxs,design)
+    fit.reduced <- eBayes(fit.reduced)
+
+    dmg <- makeGenomicRatioSetFromMatrix(mxs, rownames = NULL, pData = NULL ,
+        array = "IlluminaHumanMethylation450k" ,
+        mergeManifest = FALSE, what = "M")
+    
+    myannotation <- cpg.annotate("array", dmg, arraytype = "450K",
+        analysis.type="differential", design=design, coef=3)
+
+    dmrcoutput <- dmrcate(myannotation, lambda=1000, C=3)
+
+    dmr <- extractRanges(dmrcoutput, genome = "hg19")
+
+    return(dmr)
+}
+
+
 # this is a function which will perform differential methylation analysis
 # if you provide it with the right inputs
 dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
@@ -121,9 +161,11 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     length(dm_up)
     length(dm_dn)
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
+    dmr <- run_dmrcate(mx=mxs,design=design) 
+    head(dmr)
     make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects)
-    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects)
-
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr)
+    return(dat)
 }
 
 # Spearman ranks
