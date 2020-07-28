@@ -157,9 +157,6 @@ make_circos <- function(dmr) {
   RCircos.Chromosome.Ideogram.Plot(tick.interval = 10000)
 
 }
-str(dmrbed)
-hist(RCircos.Heatmap.Data[,6])
-is.finite(dmrbed[,5])
 
 
 # this is a wrapper which creates three charts
