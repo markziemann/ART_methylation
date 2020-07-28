@@ -1,0 +1,455 @@
+---
+title: "Rmd Skeleton"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+## Introduction
+
+
+
+## Loading packages
+
+These packackes will help us to perform vital steps such as normalisation, filtering, 
+differential analysis, etc, and provide information about the array probe annotaions.
+
+```{r,packages}
+suppressPackageStartupMessages({
+    library("plyr")
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("topconfects")
+    library("minfi")
+    library("IlluminaHumanMethylation450kmanifest")
+    library("MethylToSNP")
+    library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+    library("GEOquery")
+    library("reshape2")
+    library("beeswarm")
+  })
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
+```
+
+
+## Loading functions
+
+These functions provide shortcuts to help with charts and other analysis. They will
+eventually be shoved into another Rscript or package but can stay here for now.
+
+```{r,load_functions}
+source("meth_functions.R")
+```
+
+
+## Data import
+
+TODO- add explanation
+
+```{r,data}
+setwd("/mnt/mnorris/ART_methylation")
+
+dir.create("GSE75248")
+ARRAY_SAMPLESHEET="GSE75248/GSE75248_series_matrix.txt.gz"
+# only download it if it is not present on the system
+if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
+  DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
+  download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE75nnn/GSE75248/matrix/GSE75248_series_matrix.txt.gz",
+                destfile = DLFILE)
+  gunzip(DLFILE)
+}
+
+# Reading in GEO series matrix
+gse <- getGEO(filename="/mnt/mnorris/ART_methylation/GSE75248/GSE75248_series_matrix.txt.gz")
+
+
+ARRAY_DATA="GSE75248/GSE75248_RAW.tar"
+# only download it if it is not present on the system
+if ( !dir.exists("GSE75248/IDAT") ) {
+  dir.create("GSE75248/IDAT")
+  download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE75248&format=file", destfile = ARRAY_DATA)
+  untar(exdir = "GSE75248/IDAT", tarfile = "GSE75248/GSE75248_RAW.tar",)
+}
+
+
+baseDir <- "./GSE75248"
+targets <- pData(phenoData(gse))
+
+
+
+mylist <- list.files("./GSE75248",pattern = "GSM",recursive = TRUE)
+mylist <- gsub("_Red.idat.gz", "", mylist)
+mylist <- gsub("_Grn.idat.gz", "", mylist)
+mybase <- unique(mylist)
+targets$Basename <- paste("GSE75248/", mybase, sep = "")
+rgSet <- read.metharray.exp(targets = targets)
+
+```
+
+
+## Normalisation
+
+```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
+mSet <- preprocessRaw(rgSet)
+mSetSw <- SWAN(mSet,verbose=FALSE)
+par(mfrow=c(1,2), cex=0.8)
+densityByProbeType(mSet[,1], main = "Raw")
+densityByProbeType(mSetSw[,1], main = "SWAN")
+
+```
+
+## Filter probes
+
+Here we are running parallel analyses, both including and excluding sex chromosomes.
+
+```{r,filterprobes}
+# include sex chromosomes
+detP <- detectionP(rgSet)
+keep <- rowSums(detP < 0.01) == ncol(rgSet)
+mSetSw <- mSetSw[keep,]
+
+# exclude SNP probes
+mSetSw <- mapToGenome(mSetSw)
+mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+dim(mSetSw)
+dim(mSetSw_nosnp)
+mSetSw <- mSetSw_nosnp
+
+# exclude sex chromosomes
+keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
+mSetFlt <- mSetSw[keep,]
+```
+
+## Extracting Beta and M-values
+
+```{r,beta_m_vals}
+# include sex chromosomes
+meth <- getMeth(mSetSw)
+unmeth <- getUnmeth(mSetSw)
+Mval <- log2((meth + 100)/(unmeth + 100))
+beta <- getBeta(mSetSw)
+
+# exclude sex chromosomes
+meth <- getMeth(mSetFlt)
+unmeth <- getUnmeth(mSetFlt)
+Mval_flt <- log2((meth + 100)/(unmeth + 100))
+beta_flt <- getBeta(mSetFlt)
+
+```
+
+## Remove probes that appear to overlap SNP
+
+DOI: https://doi.org/10.1186/s13072-019-0321-6
+
+```{r,snpfilt}
+#testing
+#test <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4, SNP=SNPs.147CommonSingle #,verbose=FALSE)
+#nrow(test)
+# include sex chromosomes
+# evidence of SNP
+#snp_probe_dat <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4,
+#    SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
+# >50% confidence of SNP
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+# remove SNP probes
+#Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
+#dim(Mval)
+# evidence of SNP
+#snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
+#dim(snp_probe_dat)
+#head(snp_probe_dat)
+#snp_probes <- rownames(snp_probe_dat)
+# >50% confidence of SNP
+#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
+# remove SNP probes
+#Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
+#dim(Mval_flt)
+```
+
+## MDS analysis
+
+
+
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+#Scree Plot
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
+
+```
+
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by IVF status."}
+sample_groups <- factor(targets$`ivf:ch1`)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$`ivf:ch1`))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by IVF status")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+mydist <- plotMDS(Mval, labels=targets$geo_accession,col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=targets$geo_accession,col=colours,main="sex chromosomes excluded")
+```
+
+
+
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
+sample_groups <- factor(targets$`infant gender:ch1`)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$`infant gender:ch1`))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$geo_accession,col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$geo_accession,col=colours,main="sex chromosomes excluded")
+```
+
+For completeness, we show the MDS by ART and sex (Figure 5). It confirms the trends seen above where the 
+samples are split on the x axis by sex and on the y axis by ART classification.
+
+When sex chromosomes are removed, it is clear that ART classification is the dominant source of variance.
+
+```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
+targets$IVFgender <- paste(targets$`ivf:ch1`, targets$`infant gender:ch1`, sep=("_"))
+
+sample_groups <- factor(targets$IVFgender)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$IVFgender))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$geo_accession,col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$geo_accession,col=colours,main="sex chromosomes excluded")
+```
+
+To acertain whether technical factors like batch effects account for variance on the two main PCs, we
+create an MDS by array chip (Figure 6). There appears to be no relationship between array chip number
+and the top two PCs in the two MDS plots shown below.
+
+```{r,mds4,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6. MDS plot coloured by array chip."}
+
+```
+
+
+## Differential analysis
+
+* __NAT vs IVF__: 
+
+* __NAT vs SUB__: .
+
+* __SUB vs IVF__:
+
+* __NAT vs SUB+IVF__:
+
+
+The differential analysis is centred around limma to identify differentially methylated probes. 
+TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
+There are five outputs below:
+
+1. Volcano plot (limma result).
+
+2. Beeswarm plot (top probes by limma p-value).
+
+3. Heatmap (top probes by limma p-value).
+
+4. Beeswarm plot (top probes by topconfect ranking).
+
+5. Heatmap (top probes by topconfect ranking). (TODO)
+
+### 1
+
+```{r,nat_vs_ivf_incl}
+# include sex chromosomes
+
+samplesheet <- subset(targets,`ivf:ch1`=="No" | `ivf:ch1`=="Yes")
+samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
+sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+
+top_nat_vs_ivf_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_nat_vs_ivf_inc",
+    myann=myann ,beta= beta)
+
+head(top_nat_vs_ivf_inc$dma)
+```
+
+```{r,nat_vs_ivf_excl}
+# exclude sex chromosomes
+samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
+groups <- factor(samplesheet$art,levels=c("no","yes"))
+sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+
+top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_exc",
+    myann=myann ,beta= beta)
+
+head(top_nat_vs_ivf_exc$dma)
+```
+
+### 2
+
+```{r,nat_vs_sub_excl}
+# exclude sex chromosomes
+samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
+groups <- factor(samplesheet$art,levels=c("no","yes"))
+sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+
+top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_sub_exc",
+    myann=myann ,beta= beta)
+
+head(top_nat_vs_sub_exc$dma)
+```
+
+### 3
+
+```{r,sub_vs_IVF_exc}
+# exclude sex chromosomes
+samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
+groups <- factor(samplesheet$art,levels=c("no","yes"))
+sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+
+top_sub_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_sub_vs_ivf_exc",
+    myann=myann ,beta= beta)
+
+head(top_sub_vs_ivf_exc$dma)
+```
+
+### 4
+
+```{r,nat_vs_subivf_exc}
+# exclude sex chromosomes
+samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
+groups <- factor(samplesheet$art,levels=c("no","yes"))
+sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+
+nat_vs_subivf_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="nat_vs_subivf_exc",
+    myann=myann ,beta= beta)
+
+head(nat_vs_subivf_exc$dma)
+```
+
+
+## Venn diagrams of the differential methylated probes for each contrast
+
+```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
+
+```
+
+
+```{r,venn2,fig.cap="Comparison of probes altered by IUI, fresh and frozen IVF procedures"}
+
+```
+
+## Spearman correlations of each contrast
+
+
+```{r,spearman}
+myranks <- function(x) {
+  xx<-x[[1]]
+  xx$score <- sign(xx$logFC)/log10(xx$adj.P.Val)
+  y <- xx[,"score",drop=FALSE]
+  y$rn <- xx$Row.names
+  return(y)
+}
+
+mycontrasts <- list("top_nat_vs_ivf_exc" = top_nat_vs_ivf_exc, "top_nat_vs_sub_exc" = top_nat_vs_sub_exc, "top_sub_vs_ivf_exc" = top_sub_vs_ivf_exc, "nat_vs_subivf_exc" = nat_vs_subivf_excl)
+
+myrnks <- lapply(X = mycontrasts, FUN = myranks)
+df <- join_all(myrnks,by="rn")
+rownames(df) <- df$rn
+df$rn=NULL
+colnames(df) <- names(mycontrasts)
+head(df)
+
+mycors <- cor(df,method = "spearman")
+
+my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n = 25)
+heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
+    col=my_palette,main="Spearman correlations")
+
+mycors
+
+```
+
+## Genomic compartment analysis
+
+
+```{r,compartment}
+save.image("litzky2017.Rdata")
+
+head(top_nat_vs_ivf_exc$dma)
+dma <- top_nat_vs_ivf_exc$dma
+head(dma)
+up <- subset(dma,logFC>0 & adj.P.Val<0.05)
+dn <- subset(dma,logFC<0 & adj.P.Val<0.05)
+
+all <- table(unique(dma)$Regulatory_Feature_Group)
+up <- table(unique(up)$Regulatory_Feature_Group)
+dn <- table(unique(dn)$Regulatory_Feature_Group)
+
+xx <- data.frame(all,up,dn)
+rownames(xx) <- xx[,1]
+rownames(xx)[1] = "None"
+xx[,c(1,3,5)]=NULL
+colnames(xx) <- c("all","up","dn")
+xx <- rbind(xx,"Total"=colSums(xx))
+xx
+xx[,1:2]
+
+save.image("litzky2017.Rdata")
+```
+
+## Enrichment analysis
+
+```{r,genesets}
+library("mitch")
+# gene sets
+download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+    destfile="ReactomePathways.gmt.zip")
+unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+genesets <- gmt_import("ReactomePathways.gmt")
+```
+
+# Run 1D enrichment analysis
+
+One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
+
+```{r,1danalysis}
+
+
+```
+
+# Run multi-dimensional enrichment analysis
+
+```{r,mitch}
+
+
+```
+
+## Todo
+
+* Peak calling with DMRcate
+* repeat elements / GWAM
+
+## References
+
+
+## Session info
+
+```{r,sessioninfo}
+sessionInfo()
+
+```
