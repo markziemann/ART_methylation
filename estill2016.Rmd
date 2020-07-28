@@ -94,7 +94,7 @@ if ( !dir.exists("GSE79257/IDAT") ) {
   dir.create("GSE79257/IDAT")
   download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE79257&format=file",
     destfile = ARRAY_DATA)
-    untar(exdir = "IDAT", tarfile = ARRAY_DATA)
+    untar(exdir = "GSE79257/IDAT", tarfile = ARRAY_DATA)
 }
 
 baseDir <- "GSE79257"
@@ -587,9 +587,9 @@ capture.output(
 
 head(res$enrichment_result,20)
 
-unlink("mitch_report.html")
-    capture.output(
-        mitch_report(res,outfile=paste("mitch_report.html"))
+#unlink("estill_mitch_report.html")
+     capture.output(
+        mitch_plots(res,outfile="estill_multi_mitch.pdf")
         , file = "/dev/null", append = FALSE,
         type = c("output", "message"), split = FALSE)
 
