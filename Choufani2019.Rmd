@@ -93,7 +93,7 @@ if ( !dir.exists("GSE120250/IDAT") ) {
 baseDir <- "./GSE120250"
 targets <- pData(phenoData(gse))
 
-dim(extrameta)
+
 #Include Extra Metadata
 extrameta <- read.table("ARTdetails.tsv", sep = "\t", header = TRUE)
 extrameta <- extrameta[,c("title","Details.ART")]
@@ -238,7 +238,7 @@ mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex c
 
 ```
 ## MDS by ART with new metadata
-```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
+```{r,mds2,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
 
 sample_groups <- factor(targets$Details.ART)
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -251,7 +251,7 @@ mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex c
 ```
 
 ## MDS by Sex
-```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
+```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
 sample_groups <- factor(targets$characteristics_ch1.1)
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets$characteristics_ch1.1))]
@@ -262,7 +262,7 @@ plotMDS(mydist_flt, labels=rownames(targets) ,col=colours,main="sex chromosomes 
 ```
 
 ## MDS by ART and sex
-```{r,mds3,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
+```{r,mds4,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
 targets$ARTgender <- paste(targets$`art treatment:ch1`,targets$`gender:ch1`, sep=("_"))
 
 sample_groups <- factor(targets$ARTgender)
@@ -569,7 +569,7 @@ head(top_ICSI_vs_IUI_mitch,50)
 #One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
 
 #xl <- list("NA_vs_invitro"=top_NA_vs_invitro_exc, "top_NA_vs_invivo"=top_NA_vs_invivo_exc$dma, "top_invivo_vs_invitro"=top_invivo_vs_invitro_exc$dma,
-           "top_ART_vs_Control"=top_ART_vs_Control_exc$dma)
+#           "top_ART_vs_Control"=top_ART_vs_Control_exc$dma)
 #xxl <- lapply(X = xl,run_mitch_rank)  
 #xxxl <- lapply(xxl,function(xxl) { xxl$genenames <- rownames(xxl) ; xxl} )
 #xxll <- join_all(xxxl,by="genenames")
