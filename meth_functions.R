@@ -119,31 +119,48 @@ make_beeswarms_confects <- function(confects,name,mx,groups,n=15) {
 make_circos <- function(dmr) {
   par(mfrow=c(1,1))
   dmrbed <- data.frame(seqnames=seqnames(dmr),
-                       starts=start(dmr)-1,
-                       ends=end(dmr),
-                       names=elementMetadata(dmr)[,8],
+                       starts=as.integer(start(dmr)-1),
+                       ends=as.integer(end(dmr)),
+                       names=as.character(elementMetadata(dmr)[,8]),
                        scores=elementMetadata(dmr)[,7],
                        strands=strand(dmr))
   
-  elementMetadata(dmr)[,7]
+  dmrbed_up <- subset(dmrbed,scores>0)
+  dmrbed_dn <- subset(dmrbed,scores<0)  
   
   # lets try a circos plot
   data(UCSC.HG19.Human.CytoBandIdeogram)
-  chr.exclude <- c("chrX","chrY")
+  #chr.exclude <- c("chrX","chrY")
+  chr.exclude <- NULL
   cyto.info <- UCSC.HG19.Human.CytoBandIdeogram
   tracks.inside <- 1
   tracks.outside <- 0
   RCircos.Set.Core.Components(cyto.info, chr.exclude,
                               tracks.inside, tracks.outside)
   plot.new()
-  par(mai=c(0, 0, 0, 0))
-  data(RCircos.Tile.Data)
+  par(mai=c(0.5, 0.5, 0.5, 0.5))
+  RCircos.Set.Plot.Area(margins = 0)
+
   track.num <- 1;
   side <- "in";
-  RCircos.Set.Plot.Area(margins = 0)
-  RCircos.Tile.Plot(dmrbed, track.num, side)
+  data.col <- 5;
+  RCircos.Tile.Plot(dmrbed_up, track.num, side)
+  # heatmap dont work
+  #RCircos.Heatmap.Plot(RCircos.Heatmap.Data, data.col=5, track.num, side)
+  #RCircos.Heatmap.Plot(dmrbed, data.col=5, track.num, side)
+
+  track.num <- 2;
+  side <- "in";
+  data.col <- 5;
+  RCircos.Tile.Plot(dmrbed_dn, track.num, side)
+
   RCircos.Chromosome.Ideogram.Plot(tick.interval = 10000)
+
 }
+str(dmrbed)
+hist(RCircos.Heatmap.Data[,6])
+is.finite(dmrbed[,5])
+
 
 # this is a wrapper which creates three charts
 # We will be adding more
