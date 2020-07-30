@@ -137,7 +137,6 @@ make_circos <- function(dmr) {
   tracks.outside <- 0
   RCircos.Set.Core.Components(cyto.info, chr.exclude,
                               tracks.inside, tracks.outside)
-  plot.new()
   par(mai=c(0.5, 0.5, 0.5, 0.5))
   RCircos.Set.Plot.Area(margins = 0)
 

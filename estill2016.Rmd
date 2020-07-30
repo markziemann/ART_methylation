@@ -495,7 +495,7 @@ mycors
 I would like to know whether the observed changes occurring are overrepresented at different genomic contexts.
 
 ```{r,compartment}
-save.image("estill2016.Rdata")
+#save.image("estill2016.Rdata")
 #load("estill2016.Rdata")
 head(top_nat_vs_fz$dma)
 dma <- top_nat_vs_fz$dma
@@ -507,16 +507,32 @@ all <- table(unique(dma)$Regulatory_Feature_Group)
 up <- table(unique(up)$Regulatory_Feature_Group)
 dn <- table(unique(dn)$Regulatory_Feature_Group)
 
-xx <- data.frame(all,up,dn)
+xx=NULL
+xx <- data.frame(all,up)
 rownames(xx) <- xx[,1]
+xx[,c(1,3)]=NULL
 rownames(xx)[1] = "None"
-xx[,c(1,3,5)]=NULL
-colnames(xx) <- c("all","up","dn")
-xx <- rbind(xx,"Total"=colSums(xx))
-xx
-xx[,1:2]
+colnames(xx) <- c("all","up")
 
-save.image("estill2016.Rdata")
+x=xx$up
+m=xx$all
+n=sum(xx$all)-xx$all
+k=sum(xx$up)
+
+xx$r1 <- xx$all/sum(xx$all)
+xx$r2 <- xx$up/sum(xx$up)
+xx$or <- xx$r2 / xx$r1
+xx
+xx$phyper <- dhyper(x, m, n, k, log = FALSE)
+xx
+
+xl <- apply(xx,1,function(x) {
+    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$up)-x[2], sum(xx$all) - sum(xx$up) -x [1] + x[2] ),2,2)
+    mat
+    fisher.test(mat) 
+  })
+
+xl
 ```
 
 ## Enrichment analysis
