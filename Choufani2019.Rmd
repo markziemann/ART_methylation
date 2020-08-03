@@ -269,6 +269,8 @@ The differential analysis is centred around limma to identify differentially met
 TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
 There are five outputs below:
 
+Potentially Remove in vitro and in vivo comparisons
+
 1. Volcano plot (limma result).
 
 2. Beeswarm plot (top probes by limma p-value).
