@@ -183,7 +183,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dm <- topTable(fit.reduced,coef=3, number = Inf)
     dma <- merge(myann,dm,by=0)
     dma <- dma[order(dma$P.Value),]
-    sig <- nrow(subset(dma, P.Value < 0.05))
+    sig <- nrow(subset(dma, adj.P.Val < 0.05))
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     length(dm_up)
