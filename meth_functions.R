@@ -4,6 +4,7 @@ suppressPackageStartupMessages({
   library("missMethyl")
   library("limma")
   library("DMRcate")
+  library("DMRcatedata")
   library("topconfects")
   library("minfi")
   library("IlluminaHumanMethylation450kmanifest")
@@ -165,7 +166,9 @@ make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr) {
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mx ,n = 50)
     make_beeswarms_confects(confects, name, mx, groups, n=15)
-    make_circos( dmr = dmr)
+    if ( !is.null(dmr) ) {
+      make_circos( dmr = dmr)
+    }  
 }  
 
 
@@ -180,13 +183,18 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dm <- topTable(fit.reduced,coef=3, number = Inf)
     dma <- merge(myann,dm,by=0)
     dma <- dma[order(dma$P.Value),]
+    sig <- nrow(subset(dma, P.Value < 0.05))
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     length(dm_up)
     length(dm_dn)
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
-    dmr <- run_dmrcate(mx=mxs,design=design) 
-    head(dmr)
+    if (sig>0) {
+      dmr <- run_dmrcate(mx=mxs,design=design) 
+      head(dmr)
+    } else {
+      dmr <- NULL
+    }
     make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr)
     return(dat)
