@@ -135,8 +135,6 @@ mSetSw <- mSetSw[keep,]
 # exclude SNP probes
 mSetSw <- mapToGenome(mSetSw)
 mSetSw_nosnp <- dropLociWithSnps(mSetSw)
-dim(mSetSw)
-dim(mSetSw_nosnp)
 mSetSw <- mSetSw_nosnp
 
 # exclude sex chromosomes
@@ -158,40 +156,8 @@ meth <- getMeth(mSetFlt)
 unmeth <- getUnmeth(mSetFlt)
 Mval_flt <- log2((meth + 100)/(unmeth + 100))
 beta_flt <- getBeta(mSetFlt)
-dim(Mval_flt)
 ```
 
-## Remove probes that appear to overlap SNP
-
-DOI: https://doi.org/10.1186/s13072-019-0321-6
-
-```{r,snpfilt}
-#testing
-#test <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4, SNP=SNPs.147CommonSingle #,verbose=FALSE)
-#nrow(test)
-# include sex chromosomes
-# evidence of SNP
-#snp_probe_dat <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4,
-#    SNP=SNPs.147CommonSingle ,verbose=FALSE)
-#dim(snp_probe_dat)
-#head(snp_probe_dat)
-#snp_probes <- rownames(snp_probe_dat)
-# >50% confidence of SNP
-#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-# remove SNP probes
-#Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
-#dim(Mval)
-# evidence of SNP
-#snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
-#dim(snp_probe_dat)
-#head(snp_probe_dat)
-#snp_probes <- rownames(snp_probe_dat)
-# >50% confidence of SNP
-#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-# remove SNP probes
-#Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
-#dim(Mval_flt)
-```
 
 ## Removal of Outliers
 ```{r, outliers}
@@ -297,6 +263,8 @@ There are a few differential contrasts that would be of interest to us in this s
 
 * __NAT vs IVF__: 
 
+* __NAT vs HYPO__:
+
 The differential analysis is centred around limma to identify differentially methylated probes. 
 TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
 There are five outputs below:
@@ -318,19 +286,14 @@ There are five outputs below:
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval[,which( colnames(Mval) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
-dim(mxs)
-dim(design)
 
 top_NA_vs_invivo_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invivo_inc",
     myann=myann ,beta= beta)
+
 head(top_NA_vs_invivo_inc$dma)
 ```
 
@@ -342,15 +305,12 @@ samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vivo"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_NA_vs_invivo_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invivo_exc",
     myann=myann ,beta= beta)
 head(top_NA_vs_invivo_exc$dma)
+head(top_NA_vs_invivo_exc$dmr)
 ```
 
 ## Nat vs In vitro
@@ -363,15 +323,13 @@ samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("NA","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_NA_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invitro_exc",
     myann=myann ,beta= beta)
+
 head(top_NA_vs_invitro_exc$dma)
+head(top_NA_vs_invitro_exc$dmr)
 ```
 
 ## Nat vs ART
@@ -384,17 +342,15 @@ samplesheet$title <- (sapply(strsplit(samplesheet$title, " "), "[[", 1))
 samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
-samplesheet$title
+
 groups <- factor(samplesheet$title,levels=c("ART","Control"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_ART_vs_Control_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_ART_vs_Natural_exc",
     myann=myann ,beta= beta)
+
+head(top_ART_vs_Control_exc$dma)
 head(top_ART_vs_Control_exc$dma)
 ```
 
@@ -406,17 +362,16 @@ head(top_ART_vs_Control_exc$dma)
 samplesheet <- subset(targets,`art treatment:ch1`=="in vivo" | `art treatment:ch1`=="in vitro")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
 groups <- factor(samplesheet$`art treatment:ch1`,levels=c("in vivo","in vitro"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_invivo_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_invivo_vs_invitro_exc",
     myann=myann ,beta= beta)
+
 head(top_invivo_vs_invitro_exc$dma)
+head(top_invivo_vs_invitro_exc$dmr)
 ```
 ## Natural vs ICSI
 
@@ -426,39 +381,37 @@ samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="ICSI")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
-
 groups <- factor(samplesheet$Details.ART,levels=c("NAT","ICSI"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_NAT_vs_ICSI <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_ICSI",
     myann=myann ,beta= beta)
+
 head(top_NAT_vs_ICSI$dma)
+head(top_NAT_vs_ICSI$dmr)
+
+
 ```
 
 
 ## Natural vs IUI
 ```{r,NA_vs_IUI, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Naturally conceived vs IUI excluding sex chromosomes"}
 # Exclude Sex Chromosomes
-#samplesheet <- subset(targets, `Details.ART`=="NA" | `Details.ART`=="IUI")
-#samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-#samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="IUI")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
-#groups <- factor(samplesheet$Details.ART,levels=c("NA","IUI"))
-#sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-#design <- model.matrix(~ sex + groups)
-#    mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-#    fit.reduced <- lmFit(mxs,design)
-#    fit.reduced <- eBayes(fit.reduced)
-#    summary(decideTests(fit.reduced))
-#top_NAT_vs_IUI <- dm_analysis(samplesheet=samplesheet,
-#    sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_IUI",
-#    myann=myann ,beta= beta)
-#head(top_NA_vs_IUI$dma)
+groups <- factor(samplesheet$Details.ART,levels=c("NAT","IUI"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_NAT_vs_IUI <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_IUI",
+    myann=myann ,beta= beta)
+
+head(top_NAT_vs_IUI$dma)
+head(top_NAT_vs_IUI$dmr)
+
 ```
 
 ## ICSI vs IUI
@@ -470,15 +423,31 @@ samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
 groups <- factor(samplesheet$Details.ART,levels=c("ICSI","IUI"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
-design <- model.matrix(~ sex + groups)
-   mxs <- Mval_flt[,which( colnames(Mval_flt) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
+
 top_ICSI_vs_IUI <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_ICSI_vs_IUI",
     myann=myann ,beta= beta)
+
 head(top_ICSI_vs_IUI$dma)
+head(top_ICSI_vs_IUI$dmr)
+```
+
+## NAT vs HYPO
+```{r,Nat_vs_Hypo_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Natural vs Hypofertile, excluding sex chromosomes"}
+#Exclude Sex Chromosomes
+samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="Hypofertile")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
+groups <- factor(samplesheet$Details.ART,levels=c("NAT","Hypofertile"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_na_vs_hypo <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_na_vs_hypo",
+    myann=myann ,beta= beta)
+
+head(top_na_vs_hypo$dma)
+head(top_na_vs_hypo$dmr)
 ```
 
 # Venn diagrams of the differential methylated probes for each contrast
