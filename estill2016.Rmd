@@ -320,6 +320,8 @@ top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_fh_inc$dma)
 head(top_nat_vs_fh_inc$dmr)
+top_nat_vs_fh_inc$comp
+
 ```
 
 ```{r,nat_vs_fh_excl}
@@ -334,6 +336,8 @@ top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
+top_nat_vs_fh$comp
+
 ```
 
 ### NAT vs FZ
@@ -351,6 +355,8 @@ top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
+top_nat_vs_fz$comp
+
 ```
 
 ### NAT vs IUI
@@ -368,6 +374,8 @@ top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_iui$dma)
 head(top_nat_vs_iui$dmr)
+top_nat_vs_iui$comp
+
 ```
 
 ### FH vs FZ
@@ -379,96 +387,14 @@ samplesheet <- subset(targets,art=="FH" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("FH","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 
-length(groups)
-length(sex)
-
 top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz",
     myann=myann, beta=beta_flt)
 
-mx=Mval_flt
-name="top_fh_vs_fz"
-beta=beta_flt
-
-
- design <- model.matrix(~ sex + groups)
-    mxs <- mx[,which( colnames(mx) %in% samplesheet$Basename )]
-    fit.reduced <- lmFit(mxs,design)
-    fit.reduced <- eBayes(fit.reduced)
-    summary(decideTests(fit.reduced))
-    dm <- topTable(fit.reduced,coef=3, number = Inf)
-    dma <- merge(myann,dm,by=0)
-    dma <- dma[order(dma$P.Value),]
-    comp <- compartment_enrichment(dma)
-
-    
-     up <- subset(dma,logFC>0 & adj.P.Val<0.05)
-  dn <- subset(dma,logFC<0 & adj.P.Val<0.05)
-  all <- table(unique(dma)$Regulatory_Feature_Group)
-  up <- table(unique(up)$Regulatory_Feature_Group)
-  dn <- table(unique(dn)$Regulatory_Feature_Group)
-  xx=NULL
-  head(all)
-  head(up)
-  xx <- data.frame(all,up,fix.empty.names = "TRUE")
-  rownames(xx) <- xx[,1]
-  xx[,c(1,3)]=NULL
-  rownames(xx)[1] = "None"
-  colnames(xx) <- c("all","up")
-  x=xx$up
-  m=xx$all
-  n=sum(xx$all)-xx$all
-  k=sum(xx$up)
-  xl <- apply(xx,1,function(x) {
-    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$up)-x[2], sum(xx$all) - sum(xx$up) -x [1] + x[2] ),2,2)
-    mat
-    fisher.test(mat) 
-  })
-  xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
-  xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
-  xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
-  xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
-  up_comp <- xx
-  
-  xx=NULL
-  xx <- data.frame(all,dn)
-  rownames(xx) <- xx[,1]
-  xx[,c(1,3)]=NULL
-  rownames(xx)[1] = "None"
-  colnames(xx) <- c("all","dn")
-  x=xx$dn
-  m=xx$all
-  n=sum(xx$all)-xx$all
-  k=sum(xx$dn)
-  xl <- apply(xx,1,function(x) {
-    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$dn)-x[2], sum(xx$all) - sum(xx$dn) -x [1] + x[2] ),2,2)
-    mat
-    fisher.test(mat) 
-  })
-  xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
-  xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
-  xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
-  xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
-  dn_comp <- xx
-  list("up_comp"=up_comp,"dn_comp"=dn_comp)    
-    
-    
-    dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
-    dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
-    sig <- min(length(dm_up),length(dm_dn))
-    confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
-    if (sig>0) {
-      dmr <- run_dmrcate(mx=mxs,design=design) 
-      head(dmr)
-    } else {
-      dmr <- NULL
-    }
-    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr)
-    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp)
-    return(dat)
-
 head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
+top_fh_vs_fz$comp
+
 ```
 
 ### NAT vs FH/FZ
@@ -490,6 +416,7 @@ top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_fx$dma)
 head(top_nat_vs_fx$dmr)
+top_nat_vs_fx$comp
 ```
 
 ### IUI vs FH/FZ
@@ -515,6 +442,7 @@ top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
 
 head(top_iui_vs_fx$dma)
 head(top_iui_vs_fx$dmr)
+top_iui_vs_fx$comp
 
 ```
 
@@ -572,91 +500,6 @@ heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.
     col=my_palette,main="Spearman correlations")
 
 mycors
-```
-
-## Genomic compartment analysis
-
-I would like to know whether the observed changes occurring are overrepresented at different genomic contexts.
-
-```{r,compartment}
-#save.image("estill2016.Rdata")
-#load("estill2016.Rdata")
-
-dma <- top_nat_vs_fz$dma
-up <- subset(dma,logFC>0 & adj.P.Val<0.05)
-dn <- subset(dma,logFC<0 & adj.P.Val<0.05)
-
-all <- table(unique(dma)$Regulatory_Feature_Group)
-up <- table(unique(up)$Regulatory_Feature_Group)
-dn <- table(unique(dn)$Regulatory_Feature_Group)
-
-xx=NULL
-xx <- data.frame(all,up)
-rownames(xx) <- xx[,1]
-xx[,c(1,3)]=NULL
-rownames(xx)[1] = "None"
-colnames(xx) <- c("all","up")
-
-x=xx$up
-m=xx$all
-n=sum(xx$all)-xx$all
-k=sum(xx$up)
-
-xx$r1 <- xx$all/sum(xx$all)
-xx$r2 <- xx$up/sum(xx$up)
-xx$or <- xx$r2 / xx$r1
-xx$phyper <- dhyper(x, m, n, k, log = FALSE)
-
-xl <- apply(xx,1,function(x) {
-    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$up)-x[2], sum(xx$all) - sum(xx$up) -x [1] + x[2] ),2,2)
-    mat
-    fisher.test(mat) 
-  })
-
-xl[[1]]$conf.int
-
-xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
-xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
-xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
-xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
-
-up_comp <- xx
-
-xx=NULL
-xx <- data.frame(all,dn)
-rownames(xx) <- xx[,1]
-xx[,c(1,3)]=NULL
-rownames(xx)[1] = "None"
-colnames(xx) <- c("all","dn")
-
-x=xx$dn
-m=xx$all
-n=sum(xx$all)-xx$all
-k=sum(xx$dn)
-
-xx$r1 <- xx$all/sum(xx$all)
-xx$r2 <- xx$dn/sum(xx$dn)
-xx$or <- xx$r2 / xx$r1
-xx$phyper <- dhyper(x, m, n, k, log = FALSE)
-
-xl <- apply(xx,1,function(x) {
-    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$dn)-x[2], sum(xx$all) - sum(xx$dn) -x [1] + x[2] ),2,2)
-    mat
-    fisher.test(mat) 
-  })
-
-xl[[1]]$conf.int
-
-xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
-xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
-xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
-xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
-
-dn_comp <- xx
-
-
-comp <- compartment_enrichment(top_nat_vs_fz$dma)
-comp
 ```
 
 ## Enrichment analysis
@@ -737,8 +580,7 @@ head(res$enrichment_result,20)
 
 ## Todo
 
-* Peak calling with DMRcate
-* repeat elements / GWAM
+* repeat elements / CpG islands / GWAM
 
 ## References
 
