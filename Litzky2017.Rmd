@@ -273,57 +273,74 @@ There are five outputs below:
 
 samplesheet <- subset(targets,`ivf:ch1`=="No" | `ivf:ch1`=="Yes")
 samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+
 groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
+
 
 top_nat_vs_ivf_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_nat_vs_ivf_inc",
     myann=myann ,beta= beta)
 
 head(top_nat_vs_ivf_inc$dma)
+head(top_nat_vs_ivf_inc$dmr)
 ```
 
 ```{r,nat_vs_ivf_excl}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
-groups <- factor(samplesheet$art,levels=c("no","yes"))
-sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+samplesheet <- subset(targets,`ivf:ch1`=="No" | `ivf:ch1`=="Yes")
+samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+
+groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
+sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_exc",
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_inc",
     myann=myann ,beta= beta)
 
 head(top_nat_vs_ivf_exc$dma)
+head(top_nat_vs_ivf_exc$dmr)
 ```
+
 
 ### 2
 
 ```{r,nat_vs_sub_excl}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
-groups <- factor(samplesheet$art,levels=c("no","yes"))
-sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+samplesheet <- subset(targets,`sub:ch1`=="No" | `sub:ch1`=="Yes")
+samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+
+groups <- factor(samplesheet$`sub:ch1`,levels=c("No","Yes"))
+sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_sub_exc",
     myann=myann ,beta= beta)
 
 head(top_nat_vs_sub_exc$dma)
+head(top_nat_vs_sub_exc$dmr)
 ```
 
 ### 3
 
 ```{r,sub_vs_IVF_exc}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
-groups <- factor(samplesheet$art,levels=c("no","yes"))
-sex <- factor(samplesheet$sex,levels=c("Male","Female"))
+samplesheet <- subset(targets,`sub:ch1`=="No" | `ivf:ch1`=="Yes")
+samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
-top_sub_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_sub_vs_ivf_exc",
+groups <- factor(samplesheet$`sub:ch1`,levels=c("No","Yes"))
+sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
+
+top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_sub_exc",
     myann=myann ,beta= beta)
 
-head(top_sub_vs_ivf_exc$dma)
+head(top_nat_vs_sub_exc$dma)
+head(top_nat_vs_sub_exc$dmr)
 ```
 
 ### 4
