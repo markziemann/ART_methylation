@@ -9,23 +9,6 @@ theme: cosmo
 ---
 
 ```{r,packages}
-suppressPackageStartupMessages({
-    library("R.utils")
-    library("missMethyl")
-    library("limma")
-    library("minfi")
-    library("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
-    library("RColorBrewer")
-    library("IlluminaHumanMethylationEPICanno.ilm10b2.hg19")
-    library("eulerr")
-    library("plyr")
-    library("gplots")
-    library("reshape2")
-    library("beeswarm")
-    library("GEOquery")
-    library("Biobase")
-    library("topconfects")
-  })
 source("meth_functions.R")
 ```
 # Obtaining array annotations
@@ -56,9 +39,9 @@ download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matri
   destfile=SERIES_MATRIX)
 
 
-if(!file.exists("GSE1311433_series_matrix.txt.gz")){
+
 gse <- getGEO(filename="/mnt/mkasu/projects/ART_methylation/GSE1311433_series_matrix.txt.gz")
-}
+
 baseDir <- "."
 sample_metadata <- pData(phenoData(gse))
 targets <- sample_metadata
@@ -167,6 +150,7 @@ top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
 myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
+head(top_nat_vs_fh$dmr,10)
 ```
 
 ### non-ART Vs Frozen embryo
@@ -181,6 +165,7 @@ top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
 myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
+head(top_nat_vs_fz$dmr,10)
 ```
 
 ### non-ART Vs GIFT
@@ -195,6 +180,7 @@ top_nat_vs_GIFT <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
 myann=myann ,beta= betas)
 head(top_nat_vs_GIFT$dma,10)
+head(top_nat_vs_GIFT$dmr,10)
 ```
 
 ### non-ART Vs FX
@@ -212,6 +198,7 @@ top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
 myann=myann ,beta= betas)
 head(top_nat_vs_FX$dma,10)
+head(top_nat_vs_FX$dmr,10)
 ```
 
 
@@ -230,6 +217,7 @@ top_GIFT_vs_FX <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
 myann=myann ,beta= betas)
 head(top_GIFT_vs_FX$dma,10)
+head(top_GIFT_vs_FX$dmr,10)
 ```
 
 ### non-ART Vs ART
@@ -245,6 +233,7 @@ top_nat_vs_ART <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
 myann=myann ,beta= betas)
 head(top_nat_vs_ART$dma,10)
+head(top_nat_vs_ART$dmr,10)
 ```
 
 ### Fresh embryo Vs Frozen embryo
@@ -260,5 +249,51 @@ top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
 myann=myann ,beta= betas)
 head(top_fh_vs_fz$dma,10)
+head(top_fh_vs_fz$dmr,10)
+```
+
+
+## Venn diagrams of the differential methylated probes for each contrast
+
+```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
+load("Novakovic.Rdata")
+save.image("Novakovic.Rdata")
+v1 <- list("FH up" = top_nat_vs_fh$dm_up , 
+           "FZ up" = top_nat_vs_fz$dm_up ,
+           "FH dn" = top_nat_vs_fh$dm_dn ,
+           "FZ dn" = top_nat_vs_fz$dm_dn )
+plot(euler(v1, shape = "ellipse"), quantities = TRUE)
+```
+
+
+``{r,venn2,fig.cap="Comparison of probes altered by GIFT, fresh and frozen IVF procedures"}
+v2 <- list("FH up" = top_nat_vs_fh$dm_up , 
+           "FH dn" = top_nat_vs_fh$dm_dn ,
+           "GIFT up" = top_nat_vs_GIFT$dm_up ,
+           "GIFT dn" = top_nat_vs_GIFT$dm_dn )
+plot(euler(v2, shape = "ellipse"), quantities = TRUE)
+v3 <- list("FZ up" = top_nat_vs_fz$dm_up , 
+           "FZ dn" = top_nat_vs_fz$dm_dn ,
+           "GIFT up" = top_nat_vs_GIFT$dm_up ,
+           "GIFT dn" = top_nat_vs_GIFT$dm_dn )
+plot(euler(v3, shape = "ellipse"), quantities = FALSE)
+```
+
+
+## Spearman correlations of each contrast
+```{r,spearman}
+mycontrasts <- list("top_nat_vs_fh"=top_nat_vs_fh, "top_nat_vs_fz"=top_nat_vs_fz, "top_nat_vs_FX"=top_nat_vs_FX ,
+  "top_nat_vs_GIFT"=top_nat_vs_GIFT, "top_fh_vs_fz"=top_fh_vs_fz, "top_GIFT_vs_FX"=top_GIFT_vs_FX, "top_nat_vs_ART"=top_nat_vs_ART)
+myrnks <- lapply(X = mycontrasts, FUN = myranks)
+df <- join_all(myrnks,by="rn")
+rownames(df) <- df$rn
+df$rn=NULL
+colnames(df) <- names(mycontrasts)
+head(df)
+mycors <- cor(df,method = "spearman")
+my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n = 25)
+heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
+    col=my_palette,main="Spearman correlations")
+mycors
 ```
 
