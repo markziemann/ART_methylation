@@ -183,6 +183,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dm <- topTable(fit.reduced,coef=3, number = Inf)
     dma <- merge(myann,dm,by=0)
     dma <- dma[order(dma$P.Value),]
+    comp <- compartment_enrichment(dma)
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     sig <- min(length(dm_up),length(dm_dn))
@@ -194,7 +195,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
       dmr <- NULL
     }
     make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr)
-    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr)
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp)
     return(dat)
 }
 
@@ -217,7 +218,56 @@ run_dmrcate <- function(mx,design) {
   return(dmr)
 }
 
-
+compartment_enrichment <- function(dma) {
+  up <- subset(dma,logFC>0 & adj.P.Val<0.05)
+  dn <- subset(dma,logFC<0 & adj.P.Val<0.05)
+  all <- table(unique(dma)$Regulatory_Feature_Group)
+  up <- table(unique(up)$Regulatory_Feature_Group)
+  dn <- table(unique(dn)$Regulatory_Feature_Group)
+  xx=NULL
+  xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(up,row.names = 1),by=0, all = TRUE)
+  rownames(xx) <- xx[,1]
+  xx[,1] = NULL
+  colnames(xx) <- c("all","up")
+  xx[is.na(xx)] <- 0
+  head(xx)
+  x=xx$up
+  m=xx$all
+  n=sum(xx$all)-xx$all
+  k=sum(xx$up)
+  xl <- apply(xx,1,function(x) {
+    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$up)-x[2], sum(xx$all) - sum(xx$up) -x [1] + x[2] ),2,2)
+    mat
+    fisher.test(mat) 
+  })
+  xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
+  xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
+  xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
+  xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
+  up_comp <- xx
+  
+  xx=NULL
+  xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(dn,row.names = 1),by=0, all = TRUE)
+  rownames(xx) <- xx[,1]
+  xx[,1] = NULL
+  colnames(xx) <- c("all","dn")
+  xx[is.na(xx)] <- 0
+  x=xx$dn
+  m=xx$all
+  n=sum(xx$all)-xx$all
+  k=sum(xx$dn)
+  xl <- apply(xx,1,function(x) {
+    mat <- matrix(c(x[2],x[1]-x[2], sum(xx$dn)-x[2], sum(xx$all) - sum(xx$dn) -x [1] + x[2] ),2,2)
+    mat
+    fisher.test(mat) 
+  })
+  xx$OR <- unname(unlist(lapply(X=xl, FUN = function(x) {x$estimate})))
+  xx$fisherPval <- unname(unlist(lapply(X=xl, FUN = function(x) {x$p.value})))
+  xx$lowerCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[1]]})))
+  xx$upperCI <- unname(unlist(lapply(X=xl, FUN = function(x) {x$conf.int[[2]]})))
+  dn_comp <- xx
+  list("up_comp"=up_comp,"dn_comp"=dn_comp)
+}
 
 
 
