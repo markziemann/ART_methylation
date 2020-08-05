@@ -170,8 +170,8 @@ make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr,comp=co
     make_beeswarms_confects(confects, name, mx, groups, n=15)
     if ( !is.null(dmr) ) {
       make_circos( dmr = dmr)
-    }  
-    make_forest_plots(comp)
+      make_forest_plots(comp)
+    }
 }  
 
 make_forest_plots <- function(comp) {
@@ -209,16 +209,22 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dm <- topTable(fit.reduced,coef=3, number = Inf)
     dma <- merge(myann,dm,by=0)
     dma <- dma[order(dma$P.Value),]
-    comp <- compartment_enrichment(dma)
+
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     sig <- min(length(dm_up),length(dm_dn))
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
+
+    str(dm_up)
+    str(dm_dn)
+
     if (sig>0) {
+      comp <- compartment_enrichment(dma)
       dmr <- run_dmrcate(mx=mxs,design=design) 
       head(dmr)
     } else {
       dmr <- NULL
+      comp <- NULL
     }
     make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr, comp=comp)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp)
