@@ -175,9 +175,6 @@ make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr,comp=co
     if (sig>0) {
       make_forest_plots(comp)
       make_forest_plots(cgi)
-    }
-
-    if ( !is.null(dmr) ) {
       make_circos( dmr = dmr)
     }  
 }  
@@ -233,7 +230,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
       comp <- NULL
       cgi <- NULL
     }
-    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr, comp=comp)
+    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr, comp=comp, cgi=cgi)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp, "cgi"=cgi)
     return(dat)
 }
