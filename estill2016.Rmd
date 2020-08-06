@@ -67,7 +67,7 @@ source("meth_functions.R")
 
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
@@ -321,13 +321,14 @@ top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
 head(top_nat_vs_fh_inc$dma)
 head(top_nat_vs_fh_inc$dmr)
 top_nat_vs_fh_inc$comp
+top_nat_vs_fh_inc$cgi
 
 ```
 
 ```{r,nat_vs_fh_excl}
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
-group <- factor(samplesheet$art,levels=c("NAT","FH"))
+groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 
 top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
@@ -337,6 +338,7 @@ top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
 head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
 top_nat_vs_fh$comp
+top_nat_vs_fh$cgi
 
 ```
 
@@ -570,7 +572,7 @@ capture.output(
 
 head(res$enrichment_result,20)
 
-#unlink("estill_mitch_report.html")
+unlink("estill_multi_mitch.pdf")
      capture.output(
         mitch_plots(res,outfile="estill_multi_mitch.pdf")
         , file = "/dev/null", append = FALSE,
