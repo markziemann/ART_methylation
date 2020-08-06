@@ -286,6 +286,7 @@ compartment_enrichment <- function(dma) {
   xx=NULL
   xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(dn,row.names = 1),by=0, all = TRUE)
   rownames(xx) <- xx[,1]
+  rownames(xx)[1] <- "None"
   xx[,1] = NULL
   colnames(xx) <- c("all","dn")
   xx[is.na(xx)] <- 0
@@ -316,7 +317,6 @@ cgi_enrichment <- function(dma) {
   xx=NULL
   xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(up,row.names = 1),by=0, all = TRUE)
   rownames(xx) <- xx[,1]
-  rownames(xx)[1] <- "None"
   xx[,1] = NULL
   colnames(xx) <- c("all","up")
   xx[is.na(xx)] <- 0
