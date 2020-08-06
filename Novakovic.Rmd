@@ -15,7 +15,9 @@ source("meth_functions.R")
 
 ```{r,annotation}
 anno <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
-myann <- data.frame(anno[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+myann <- data.frame(anno[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
+
 ```
 
 
@@ -37,8 +39,6 @@ if(!dir.exists("IDAT")){
   SERIES_MATRIX="GSE1311433_series_matrix.txt.gz"
 download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz", 
   destfile=SERIES_MATRIX)
-
-
 
 gse <- getGEO(filename="/mnt/mkasu/projects/ART_methylation/GSE1311433_series_matrix.txt.gz")
 
@@ -67,13 +67,15 @@ densityByProbeType(mSetSw[,1], main = "SWAN")
 detP <- detectionP(rgSet)
 keep <- rowSums(detP < 0.01) == ncol(rgSet)
 mSetSw <- mSetSw[keep,]
+
 # exclude SNP probes
 mSetSw <- mapToGenome(mSetSw)
 mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+
 # exclude sex chromosomes
-keep <- !(featureNames(mSetSw) %in% myann$Name[myann$chr %in% 
-                                                     c("chrX","chrY")])
-mSetFlt <- mSetSw[keep,]
+xyprobes <- anno$Name[anno$chr %in% c("chrX","chrY")]
+mSetFlt <- mSetSw[which(!rownames(mSetSw) %in% xyprobes),]
+
 ```
 
 ```{r,beta_m_vals}
@@ -266,12 +268,13 @@ plot(euler(v1, shape = "ellipse"), quantities = TRUE)
 ```
 
 
-``{r,venn2,fig.cap="Comparison of probes altered by GIFT, fresh and frozen IVF procedures"}
+```{r,venn2,fig.cap="Comparison of probes altered by GIFT, fresh and frozen IVF procedures"}
 v2 <- list("FH up" = top_nat_vs_fh$dm_up , 
            "FH dn" = top_nat_vs_fh$dm_dn ,
            "GIFT up" = top_nat_vs_GIFT$dm_up ,
            "GIFT dn" = top_nat_vs_GIFT$dm_dn )
 plot(euler(v2, shape = "ellipse"), quantities = TRUE)
+
 v3 <- list("FZ up" = top_nat_vs_fz$dm_up , 
            "FZ dn" = top_nat_vs_fz$dm_dn ,
            "GIFT up" = top_nat_vs_GIFT$dm_up ,
