@@ -1,0 +1,200 @@
+---
+title: "Hajj 2017 Reanalysis"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+## Introduction
+
+
+## Loading packages and functions
+
+These packackes will help us to perform vital steps such as normalisation, filtering, 
+differential analysis, etc, and provide information about the array probe annotaions.
+
+These functions provide shortcuts to help with charts and other analysis. They will
+eventually be shoved into another Rscript or package but can stay here for now.
+```{r,packages}
+source("meth_functions.R")
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
+```
+
+## Data import
+
+
+```{r,data}
+
+# Downloaded IDAT files from marcus.dittrich@biozentrum.uni-wuerzburg.de 
+baseDir <- "Hajj"
+
+# Datasheet converted to CSV, array barcode and location converted to sentrix ID and position, respectively
+targets <- read.metharray.sheet(baseDir)
+rgSet <- read.metharray.exp(targets = targets)
+rgSet
+
+```
+
+
+## Normalisation
+
+```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
+mSet <- preprocessRaw(rgSet)
+mSetSw <- SWAN(mSet,verbose=FALSE)
+par(mfrow=c(1,2), cex=0.8)
+densityByProbeType(mSet[,1], main = "Raw")
+densityByProbeType(mSetSw[,1], main = "SWAN")
+
+```
+
+## Filter probes
+
+Here we are running parallel analyses, both including and excluding sex chromosomes.
+
+```{r,filterprobes}
+# include sex chromosomes
+detP <- detectionP(rgSet)
+keep <- rowSums(detP < 0.01) == ncol(rgSet)
+mSetSw <- mSetSw[keep,]
+
+# exclude SNP probes
+mSetSw <- mapToGenome(mSetSw)
+mSetSw_nosnp <- dropLociWithSnps(mSetSw)
+dim(mSetSw)
+dim(mSetSw_nosnp)
+mSetSw <- mSetSw_nosnp
+
+# exclude sex chromosomes
+keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
+mSetFlt <- mSetSw[keep,]
+```
+
+## Extracting Beta and M-values
+
+```{r,beta_m_vals}
+# include sex chromosomes
+meth <- getMeth(mSetSw)
+unmeth <- getUnmeth(mSetSw)
+Mval <- log2((meth + 100)/(unmeth + 100))
+beta <- getBeta(mSetSw)
+
+# exclude sex chromosomes
+meth <- getMeth(mSetFlt)
+unmeth <- getUnmeth(mSetFlt)
+Mval_flt <- log2((meth + 100)/(unmeth + 100))
+beta_flt <- getBeta(mSetFlt)
+
+```
+
+
+
+## MDS analysis
+
+
+```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+#Scree Plot
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
+
+```
+
+
+```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ICSI status."}
+sample_groups <- factor(targets$Group)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$Group))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ICSI status")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+mydist <- plotMDS(Mval, labels=targets$FileName,col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=targets$FileName,col=colours,main="sex chromosomes excluded")
+```
+
+```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
+sample_groups <- factor(targets$Gender)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$Gender))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$FileName,col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$FileName,col=colours,main="sex chromosomes excluded")
+```
+
+
+## MDS by ART and sex
+```{r,mds4,fig.width = 8 ,fig.height = 8, fig.cap="Figure 5. MDS plot coloured by ART classification and sex."}
+targets$ARTgender <- paste(targets$Group, targets$Gender, sep=("_"))
+sample_groups <- factor(targets$ARTgender)
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$ARTgender))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART and sex")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$FileName, col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$FileName, col=colours,main="sex chromosomes excluded")
+```
+
+## Differential analysis
+
+* __NAT vs ICSI__: 
+
+
+
+The differential analysis is centred around limma to identify differentially methylated probes. 
+TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
+There are five outputs below:
+
+1. Volcano plot (limma result).
+
+2. Beeswarm plot (top probes by limma p-value).
+
+3. Heatmap (top probes by limma p-value).
+
+4. Beeswarm plot (top probes by topconfect ranking).
+
+5. Heatmap (top probes by topconfect ranking). (TODO)
+
+### 1
+
+```{r,nat_vs_icsi_incl}
+# include sex chromosomes
+
+samplesheet <- targets
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+
+groups <- factor(samplesheet$Group,levels=c("Control","ICSI"))
+sex <- factor(samplesheet$Gender,levels=c("male","female"))
+
+    
+top_nat_vs_icsi_inc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval,name="top_nat_vs_icsi_inc",
+    myann=myann ,beta= beta)
+
+head(top_nat_vs_icsi_inc$dma)
+head(top_nat_vs_icsi_inc$dmr)
+```
+
+```{r,nat_vs_icsi_exc}
+# include sex chromosomes
+
+samplesheet <- targets
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+
+groups <- factor(samplesheet$Group,levels=c("Control","ICSI"))
+sex <- factor(samplesheet$Gender,levels=c("male","female"))
+
+    
+top_nat_vs_icsi_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_icsi_exc",
+    myann=myann ,beta= beta)
+
+head(top_nat_vs_icsi_exc$dma)
+head(top_nat_vs_icsi_exc$dmr)
+```
+
+
