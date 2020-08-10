@@ -218,13 +218,13 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     sig <- min(length(dm_up),length(dm_dn))
     confects <- limma_confects(fit.reduced, coef=3, fdr=0.05)
-    if (sig>0) {
+    if (sig > 10) {
       dmr <- run_dmrcate(mx=mxs,design=design) 
       head(dmr)
       comp <- compartment_enrichment(dma)
       comp
       cgi <- cgi_enrichment(dma)
-      comp
+      cgi
     } else {
       dmr <- NULL
       comp <- NULL
