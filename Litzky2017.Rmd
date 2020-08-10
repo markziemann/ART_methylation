@@ -12,44 +12,22 @@ theme: cosmo
 
 
 
-## Loading packages
+## Loading packages and functions
 
 These packackes will help us to perform vital steps such as normalisation, filtering, 
 differential analysis, etc, and provide information about the array probe annotaions.
 
-```{r,packages}
-suppressPackageStartupMessages({
-    library("plyr")
-    library("R.utils")
-    library("missMethyl")
-    library("limma")
-    library("topconfects")
-    library("minfi")
-    library("IlluminaHumanMethylation450kmanifest")
-    library("MethylToSNP")
-    library("RColorBrewer")
-    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
-    library("eulerr")
-    library("plyr")
-    library("gplots")
-    library("GEOquery")
-    library("reshape2")
-    library("beeswarm")
-  })
-# Annotation
-ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
-promoters <- grep("Prom",myann$Regulatory_Feature_Group)
-```
-
-
-## Loading functions
 
 These functions provide shortcuts to help with charts and other analysis. They will
 eventually be shoved into another Rscript or package but can stay here for now.
 
-```{r,load_functions}
+```{r,packages}
 source("meth_functions.R")
+
+# Annotation
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
 
@@ -67,7 +45,7 @@ if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
   DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
   download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE75nnn/GSE75248/matrix/GSE75248_series_matrix.txt.gz",
                 destfile = DLFILE)
-  gunzip(DLFILE)
+   gunzip(DLFILE)
 }
 
 # Reading in GEO series matrix
@@ -249,7 +227,6 @@ and the top two PCs in the two MDS plots shown below.
 
 * __SUB vs IVF__:
 
-* __NAT vs SUB+IVF__:
 
 
 The differential analysis is centred around limma to identify differentially methylated probes. 
@@ -279,8 +256,11 @@ groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 
+  mx=Mval_flt
+  name="top_nat_vs_ivf_inc"
+    
 top_nat_vs_ivf_inc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval,name="top_nat_vs_ivf_inc",
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_inc",
     myann=myann ,beta= beta)
 
 head(top_nat_vs_ivf_inc$dma)
@@ -297,7 +277,7 @@ groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_inc",
+    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_exc",
     myann=myann ,beta= beta)
 
 head(top_nat_vs_ivf_exc$dma)
@@ -309,11 +289,11 @@ head(top_nat_vs_ivf_exc$dmr)
 
 ```{r,nat_vs_sub_excl}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`sub:ch1`=="No" | `sub:ch1`=="Yes")
+samplesheet <- subset(targets,`subfertility:ch1`=="No" | `subfertility:ch1`=="Yes")
 samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
-groups <- factor(samplesheet$`sub:ch1`,levels=c("No","Yes"))
+groups <- factor(samplesheet$`subfertility:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
@@ -328,11 +308,11 @@ head(top_nat_vs_sub_exc$dmr)
 
 ```{r,sub_vs_IVF_exc}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`sub:ch1`=="No" | `ivf:ch1`=="Yes")
+samplesheet <- subset(targets,`subfertility:ch1`=="Yes")
 samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
-groups <- factor(samplesheet$`sub:ch1`,levels=c("No","Yes"))
+groups <- factor(samplesheet$`IVF:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
@@ -343,20 +323,6 @@ head(top_nat_vs_sub_exc$dma)
 head(top_nat_vs_sub_exc$dmr)
 ```
 
-### 4
-
-```{r,nat_vs_subivf_exc}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`ivf:ch1`=="no" | art=="yes")
-groups <- factor(samplesheet$art,levels=c("no","yes"))
-sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
-nat_vs_subivf_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="nat_vs_subivf_exc",
-    myann=myann ,beta= beta)
-
-head(nat_vs_subivf_exc$dma)
-```
 
 
 ## Venn diagrams of the differential methylated probes for each contrast
