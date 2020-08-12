@@ -10,9 +10,55 @@ theme: cosmo
 
 Source: https://github.com/markziemann/ART_methylation/introduction.Rmd
 
-## Outline
+## Background
 
-1. What is ART?
+### What is ART?
+
+Assisted reproductive technology (ART) is a group of medical procedures defined by the WHO to enable conception due to reduced fertility [1](Zegers-Hochschild et al, 2009).
+This includes in vitro fertilization (IVF), intracytoplasmic sperm injection (ICSI), gamete intra-fallopian transfer (GIFT), zygote intra-fallopian transfer, gamete and embryo cryopreservation, oocyte and embryo donation and gestational surrogacy.  
+According to this definition, ovulation induction (via medication) and intra-uterine insemination (IUI) are not included as ART, but come under the wider classification of medically assisted reproduction.
+Since the first successful IVF birth in 1978, there have been over 8 million IVF births and roughly 500,000 annually [2](Fauser 2019).
+
+### Is ART associated with adverse health outcomes?
+<include birth defects, immune disorders, cancer, cvd and stroke>
+
+Interest in epigenetic deregulation as a consequence ART has been sparked by reports of higher rates of birth defects after IVF and ICSI, although maternal factors such as age and lifestyle factors also contribute to this [3,4,5](Ericson & Källén 2001; Hansen et al, 2002; Davies et al, 2012).
+
+
+
+Similarly, the rates of specific conditions such as cerebral palsy, type-1 diabetes and behavioral disorders are higher in IVF conceived children, but seems to be attributable to higher rates of multiple births [6](Klemetti et al, 2006).
+
+
+The review argues that rates of the imprinting disorder Beckwith-Wiedemann syndrome is higher among IVF versus naturally conceived children.
+Schieve LA, Rasmussen SA, Buck GM, Schendel DE, Reynolds MA, Wright VC. Are children born after assisted reproductive technology at increased risk for adverse health outcomes? Obstet Gynecol. 2004;103:1154-63.
+
+Nwaru BI, McCleary N, Erkkola M, Kaila M, Virtanen SM, Sheikh A. Assisted reproductive technology and risk of asthma and allergy in the offspring: protocol for a systematic review and meta-analysis. BMJ Open. 2016;6(4):e010697. Published 2016 Apr 22. doi:10.1136/bmjopen-2015-010697
+
+https://www.sciencedirect.com/science/article/abs/pii/S0301054609702459
+A small study found that children conceived with IVF did not have an elevated prevalence of asthma and allergies (Cetinkaya et al, 2009).
+
+https://www.bmj.com/content/321/7258/420?view
+Importantly disease risk is influenced not only by conception mode but also maternal age, for example maternal age is a contributing factor to type-1 diabetes onset (Bingley et al, 2000).
+
+
+DeBaun MR, Niemitz EL, Feinberg AP. Association of in
+vitro fertilization with Beckwith-Wiedemann syndrome
+and epigenetic alterations of LIT1 and H19. Am J Hum
+Genet 2003;72:156–60.
+
+Maher ER, Brueton LA, Bowdin SC, Luharia A, Cooper
+W, Cole TR, et al. Beckwith-Wiedemann syndrome and
+assisted reproduction technology (ART) published erratum appears in J Med Genet 2003;40:304. J Med Genet
+2003;40:62–4.
+
+Cox GF, Bu¨rger J, Lip V, Mau UA, Sperling K, Wu BL, et
+al. Intracytoplasmic sperm injection may increase the risk
+of imprinting defects. Am J Hum Genet 2002;71:162–4.
+
+
+https://academic.oup.com/humupd/article/19/4/330/609666
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4899282/
+
 
 2. Why is ART implicated with epigenetic differences?
 
@@ -28,18 +74,18 @@ Source: https://github.com/markziemann/ART_methylation/introduction.Rmd
 
 * https://pubmed.ncbi.nlm.nih.gov/27288894/
 
-## Background
+## References 
 
-Assisted reproductive technology (ART) is a group of medical procedures to enable conception due to reduced fertlity.
-It includes:
+1. Zegers-Hochschild F, Adamson GD, de Mouzon J, et al. International Committee for Monitoring Assisted Reproductive Technology (ICMART) and the World Health Organization (WHO) revised glossary of ART terminology, 2009. Fertil Steril. 2009;92(5):1520-1524. doi:10.1016/j.fertnstert.2009.09.009
 
-* Fertility medication (ovulation induction)
+2. Fauser BC. Towards the global coverage of a unified registry of IVF outcomes. Reprod Biomed Online. 2019;38(2):133-137. doi:10.1016/j.rbmo.2018.12.001
 
-* Gamete intra-fallopian transfer (GIFT) 
+3. Ericson A, Källén B. Congenital malformations in infants born after IVF: a population-based study. Hum Reprod. 2001;16(3):504-509. doi:10.1093/humrep/16.3.504
 
-* Intra-uterine insemination (IUI)
+4. Hansen M, Kurinczuk JJ, Bower C, Webb S. The risk of major birth defects after intracytoplasmic sperm injection and in vitro fertilization. N Engl J Med. 2002;346(10):725-730. doi:10.1056/NEJMoa010035
 
-* In vitro fertilization (IVF)
+5. Davies MJ, Moore VM, Willson KJ, et al. Reproductive technologies and the risk of birth defects. N Engl J Med. 2012;366(19):1803-1813. doi:10.1056/NEJMoa1008095
 
-* Intracytoplasmic sperm injection (ICSI)
+6. Klemetti R, Sevon T, Gissler M, Hemminki E. Health of children born as a result of in vitro fertilization. Pediatrics. 2006;118: 1819-27.
 
+7. 
