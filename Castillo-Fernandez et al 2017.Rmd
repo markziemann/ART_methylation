@@ -1,0 +1,383 @@
+---
+title: "Castillo-Fernandez et al 2017"
+author: "Mary"
+date: "8/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+load("~/castillo.Rdata")
+```
+
+
+
+
+
+
+##Loading packages
+
+```{r,packages}
+suppressPackageStartupMessages({
+    library("R.utils")
+    library("missMethyl")
+    library("limma")
+    library("topconfects")
+    library("minfi")
+    library("IlluminaHumanMethylation450kmanifest")
+    library("MethylToSNP")
+    library("RColorBrewer")
+    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+    library("eulerr")
+    library("plyr")
+    library("gplots")
+    library("reshape2")
+    library("beeswarm")
+  library("BSgenome")
+library("MEDIPS")
+  library("DESeq2")
+library(BSgenome.Hsapiens.UCSC.hg19)
+  })
+
+#Annotation
+```
+## counts
+
+```{r,counts}
+counts<-mr.edgeR[,1:158]
+rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
+counts[,1:4]=NULL
+colnames(counts)<-gsub(".bam.counts","",colnames(counts))
+head(counts)
+summary(counts)
+```
+## metadata
+```{r,metadata}
+sf1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
+rs1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+rs1[,ncol(rs1)]=NULL
+md1<-apply(rs1,2,function(x){
+  sapply(strsplit(x,"="),"[[",2)
+  })
+headers<-t(rs1[1,])
+colnames(md1)<-sapply(strsplit(headers[,1],"="), "[[",1)
+rownames(md1)<-sf1[,1]
+md1<-as.data.frame(md1)
+
+
+sf2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
+rs2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+rs2[,ncol(rs2)]=NULL
+md2<-apply(rs2,2,function(x){
+  sapply(strsplit(x,"="),"[[",2)
+  })
+headers<-t(rs2[1,])
+colnames(md2)<-sapply(strsplit(headers[,1],"="), "[[",1)
+rownames(md2)<-sf2[,1]
+md2<-as.data.frame(md2)
+
+md <- as.data.frame(rbind(md1,md2))
+
+mdc <- md[grep("C",rownames(md)),]
+
+mdw <- md[grep("W",rownames(md)),]
+
+## CBMC
+## number of natural conception 43
+nrow(subset(mdc,medical_help_to_conceive=="no"))
+## number of ovarian stimulation is 36
+nrow(subset(mdc,ovarian_stimulation=="yes"))
+## number of gamete intrafallopian transfer is 2
+nrow(subset(mdc,gamete_intrafallopian_transfer=="yes"))
+## numberof intracytoplasmic sperm injection is 21
+nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"))
+## number of ICSI frozen embryo is 9
+nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
+## number of ICSI fresh embryo is 12
+nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+
+
+## WCB
+## number of medical help to conceive is 54
+nrow(subset(mdw,medical_help_to_conceive=="no"))
+## number of ovarian stimulation is 36
+nrow(subset(mdw,ovarian_stimulation=="yes"))
+## number of gamete intrafallopian transfer is 2
+nrow(subset(mdw,gamete_intrafallopian_transfer=="yes"))
+## numberof intracytoplasmic sperm injection is 18
+nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"))
+## number of ICSI frozen embryo is 6
+nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
+## number of ICSI fresh embryo is 12
+nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+```
+
+based on the numbers, following are the contrasts
+
+CBMC and WBC
+
+* Natural Vs Ovarian stimulation
+
+* Natural Vs GIFT
+
+* Natural Vs ICSI fresh
+
+* Natural Vs ICSI frozen
+
+* ICSI fresh Vs frozen
+
+* Ovarian stimulation Vs GIFT
+
+* Ovarian stimulation Vs ICSI fresh 
+
+* Ovarian stimulation Vs ICSI frozen
+
+* GIFT Vs ICSI fresh
+
+* GIFT Vs ICSI frozen
+
+
+## CBMC: Natural Vs Ovarian stimulation
+```{r,dm1}
+NAME = "CBMC_natural_vs_ovarian_stimulation"
+samplesheet<-subset(mdc, medical_help_to_conceive=="no" | ovarian_stimulation=="yes")
+samplesheet$groups <- factor(samplesheet$ovarian_stimulation,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+
+# optional
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DGEs,", UP ,"upregulated,", DN, "downregulated")
+
+# smear plot optional
+plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
+xlab="log2 base mean",
+ylim=c(-3,3),ylab="log2 fold change"
+,pch=19,col="#838383")
+points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
+mtext((HEADER),cex=1.2)
+
+```
+## Natural Vs GIFT
+
+```{r,dm2}
+NAME = "CBMC_natural_vs_gamete_intrafallopian_transfer"
+samplesheet<-subset(mdc, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
+samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+## Natural Vs ICSI fresh
+
+```{r,dm3}
+NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_fresh_embryo"
+samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+## Natural Vs ICSI frozen
+
+```{r,dm4}
+NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_frozen_embryo"
+samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+## ICSI fresh Vs ICSI frozen
+
+```{r,dm5}
+NAME = "CBMC_intracytoplasmic_sperm_injection_fresh_embryo_vs_intracytoplasmic_sperm_injection_frozen_embryo"
+samplesheet<-subset(mdc, intracytoplasmic_sperm_injection=="yes")
+samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+
+## ovarian stimulation vs GIFT
+
+```{r,dm6}
+NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
+samplesheet<-subset(mdc, ovarian_stimulation=="yes" | gamete_intrafallopian_transfer=="yes")
+samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+## ovarian stimulation vs ICSI fresh
+
+```{r,dm7}
+NAME = "CBMC_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_fresh_embryo"
+samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+
+## ovarian stimulation vs ICSI frozen
+
+```{r,dm8}
+NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
+samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+
+## GIFT vs ICSI fresh
+
+```{r,dm9}
+NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_fresh_embryo"
+samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
+
+## GIFT vs ICSI frozen
+
+```{r,dm10}
+NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_frozen_embryo"
+samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
+samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
+samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
+counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
+# filter genes with fewer than 10 reads per sample
+y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
+y <- y[,order(colnames(y))]
+samplesheet <- samplesheet[order(rownames(samplesheet)),]
+
+dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
+res <- DESeq(dds)
+z <- results(res)
+vsd <- vst(dds, blind=FALSE)
+zz <-cbind(as.data.frame(z),assay(vsd))
+dge <- as.data.frame(zz[order(zz$pvalue),])
+dge[1:10,1:6]
+```
