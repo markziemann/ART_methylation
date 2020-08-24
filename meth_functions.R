@@ -47,7 +47,7 @@ make_volcano <- function(dm,name,mx) {
     points(sig$logFC,-log10(sig$P.Val),cex=0.5,pch=19,col="red")
 }
 
-# Here is a function to make heatmaps 
+# Here is a function to make heatmaps based on smallest p-values
 make_heatmap <- function(dm,name,mx,n, groups) {
   topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
   ss <- mx[which(rownames(mx) %in% topgenes),]
@@ -58,6 +58,19 @@ make_heatmap <- function(dm,name,mx,n, groups) {
   heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
     ColSideColors=colCols ,  col=my_palette, main=name)
 }
+
+# Here is a function to make heatmaps based on topconfects
+make_heatmap2 <- function(confects,name,mx,n, groups) {
+  topgenes <-  head(confects$table$name,n)
+  ss <- mx[which(rownames(mx) %in% topgenes),]
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  colCols <- as.numeric(as.factor(groups))
+  colCols <- gsub("1","orange",colCols)
+  colCols <- gsub("0","yellow",colCols)
+  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
+    ColSideColors=colCols ,  col=my_palette, main=name)
+}
+
 
 # make beeswarm charts
 # dm = a limma differential meth object
@@ -171,7 +184,8 @@ make_dm_plots <- function(dm,name,mx,mxs,groups=groups,confects=confects,dmr,com
     make_beeswarms(dm ,name , mx , groups , n= 15)
     make_heatmap(dm , name , mxs ,n = 50, groups)
     make_beeswarms_confects(confects, name, mx, groups, n=15)
-
+    make_heatmap2(confects, name, mxs, n = 50, groups)
+    
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     sig <- min(length(dm_up),length(dm_dn))

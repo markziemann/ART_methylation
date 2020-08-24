@@ -322,7 +322,8 @@ head(top_nat_vs_fh_inc$dma)
 head(top_nat_vs_fh_inc$dmr)
 top_nat_vs_fh_inc$comp
 top_nat_vs_fh_inc$cgi
-
+names(top_nat_vs_fh_inc)
+head(top_nat_vs_fh_inc$confects$table$name)
 ```
 
 ```{r,nat_vs_fh_excl, fig.width = 8 ,fig.height = 8}
@@ -445,7 +446,6 @@ top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
 head(top_iui_vs_fx$dma)
 head(top_iui_vs_fx$dmr)
 top_iui_vs_fx$comp
-
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
