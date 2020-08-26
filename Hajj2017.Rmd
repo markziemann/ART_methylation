@@ -213,7 +213,7 @@ There are five outputs below:
 
 ### 1
 
-```{r,nat_vs_icsi_incl}
+```{r,nat_vs_icsi_incl, fig.width = 8 ,fig.height = 8}
 # include sex chromosomes
 
 samplesheet <- targets
@@ -231,7 +231,7 @@ head(top_nat_vs_icsi_inc$dma)
 head(top_nat_vs_icsi_inc$dmr)
 ```
 
-```{r,nat_vs_icsi_exc}
+```{r,nat_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
 # include sex chromosomes
 
 samplesheet <- targets
