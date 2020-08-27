@@ -21,8 +21,6 @@ Since the first successful IVF birth in 1978, there have been over 8 million ART
 
 ### Is ART associated with adverse health outcomes?
 
-<include birth defects, immune disorders, cancer, cvd and stroke>
-
 Interest in epigenetic deregulation as a consequence ART has been sparked by reports of higher rates of birth defects after IVF and ICSI, although maternal factors such as age and lifestyle factors also contribute to this [3,4,5](Ericson & Källén 2001; Hansen et al, 2002; Davies et al, 2012).
 
 Similarly, the rates of specific conditions such as cerebral palsy, type-1 diabetes and behavioral disorders are higher in IVF conceived children, but could be attributable to higher rates of multiple births [6](Klemetti et al, 2006).
@@ -33,20 +31,33 @@ A number of studies and meta-analyses have reported higher rates of imprinting d
 In only a few studies has the potentially confounding effect of maternal age been taken into account [11-12](Uk et al, 2018; Hattori et al, 2019).
 A 2013 meta-analysis taking into consideration maternal age showed that ART conceived infants have a 30% higher rate of birth defects [13](Hansen et al, 2013), which has been confirmed with a more recent update showing equivalent effects with IVF and ICSI [14](Zhao et al, 2020).
 
-As ART conceived individuals age, we are beginning to learn about their predisposition to risk of different diseases such as autoimmune, cardiovascular, metabolic and malignancy related conditions.
+As ART conceived individuals age, we are beginning to learn about their predisposition to risk of different conditions such as autoimmune, cardiovascular, metabolic and malignancy related maladies.
 There are some limitations with this analysis however, such as the substantial improvements in ART procedures over the years which has lead to lower rates of multiple births [15](Morin & Seli 2018). 
+In the case of childhood cancer, systematic meta-analysis published in 2013 indicates that IVF leads to a 60% higher risk as compared to naturally conceived, however a matched subfertile control group was used in only two of the 25 studies in the meta-analysis [16](Hargreave et al, 2013).
+A later meta-analysis found no significant link between ART and childhood cancer except in the case of cryopreserved embryo transfer, which was associated with a 2.5 fold increased cancer risk, but only when compared to children of fertile women [17](Hargreave et al, 2019).
+It has been argued that ART can increase the risk of cardiometabolic disease, however this is based largely on subclinical features such as small elevation of blood pressure or adiposity for which the association with cardiovascular events and longevity is unclear [18](Vrooman & Bartolomei 2017).
 
+### What is the link between ART and DNA methylation?
 
+The associations between subfertility/ART and adverse health outcomes including imprinting and other birth defects implies that epigenetic mechanisms may be involved. 
+Among these mechanisms, DNA methylation has been the most widely investigated, primarily due to the ease at which it can be assayed in clinical samples.
+The focus of methylation analyses has largely been upon imprinted genes, such as H19/IGF2, KCNQ1OT1, PEG3, PEG1, and MEG3 ; but despite this, metaanalysis indicates no consistent association between ART and DNA methylation [19](Lazaraviciute et al, 2014).
+Epigenome-wide methods such as microarray and next generation sequencing have been deployed to identify differences between ART and naturally conceived children, however again the results are inconsistent.
 
+Martino 2013 https://pubmed.ncbi.nlm.nih.gov/23697701/
+Melamed 2015 https://www.tandfonline.com/doi/full/10.4161/15592294.2014.988041
+Choufani 2015 https://academic.oup.com/hmg/article/28/3/372/5102486
+Estill 2016 https://www.ncbi.nlm.nih.gov/pubmed/27288894
+Castillo Fernandes 2017 https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-017-0413-5
+Hajj 2017 https://academic.oup.com/humrep/article/32/8/1761/3859168
+Lizky 2017 https://www.tandfonline.com/doi/full/10.1080/15592294.2017.1336589
+Li 2018	https://academic.oup.com/ije/article/47/3/908/4922690
+Solomon 2018 https://www.tandfonline.com/doi/full/10.1080/15592294.2018.1497386
+Novakovic 2019 https://www.nature.com/articles/s41467-019-11929-9#Bib1
 
-https://www.sciencedirect.com/science/article/abs/pii/S0301054609702459
-A small study found that children conceived with IVF did not have an elevated prevalence of asthma and allergies (Cetinkaya et al, 2009).
+### What are the current controversies?
 
-3. What is the evidence that ART is implicated in epigenetic differences?
-
-4. What are the current controversies?
-
-5. What is the aim and rationale of this study?
+### What is the aim and rationale of this study?
 
 ## Key references:
 
@@ -86,6 +97,11 @@ A small study found that children conceived with IVF did not have an elevated pr
 
 15. Morin SJ, Seli E. Assisted Reproductive Technology and Origins of Disease: The Clinical Realities and Implications. Semin Reprod Med. 2018;36(3-04):195-203. doi:10.1055/s-0038-1677048
 
+16. Hargreave M, Jensen A, Toender A, Andersen KK, Kjaer SK. Fertility treatment and childhood cancer risk: a systematic meta-analysis. Fertil Steril. 2013;100(1):150-161. doi:10.1016/j.fertnstert.2013.03.017
+
+17. Hargreave M, Jensen A, Hansen MK, et al. Association Between Fertility Treatment and Cancer Risk in Children. JAMA. 2019;322(22):2203-2210. doi:10.1001/jama.2019.18037
+
+18. Vrooman LA, Bartolomei MS. Can assisted reproductive technologies cause adult-onset disease? Evidence from human and mouse. Reprod Toxicol. 2017;68:72-84. doi:10.1016/j.reprotox.2016.07.015
 
 ## Other papers
 
