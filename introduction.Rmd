@@ -14,50 +14,49 @@ Source: https://github.com/markziemann/ART_methylation/introduction.Rmd
 
 ### What is ART?
 
-Assisted reproductive technology (ART) is a group of medical procedures defined by the WHO to enable conception due to reduced fertility [1](Zegers-Hochschild et al, 2009).
+Assisted reproductive technology (ART) is a group of medical procedures defined by the WHO to enable conception due to reduced fertility (Zegers-Hochschild et al, 2009)[1].
 This includes in vitro fertilization (IVF), intracytoplasmic sperm injection (ICSI), gamete intra-fallopian transfer (GIFT), zygote intra-fallopian transfer, gamete and embryo cryopreservation, oocyte and embryo donation and gestational surrogacy.  
 According to this definition, ovulation induction (via medication) and intra-uterine insemination (IUI) are not included as ART, but come under the wider classification of medically assisted reproduction.
-Since the first successful IVF birth in 1978, there have been over 8 million ART births and roughly 500,000 annually [2](Fauser 2019).
+Since the first successful IVF birth in 1978, there have been over 8 million ART births and roughly 500,000 annually (Fauser 2019)[2].
 
 ### Is ART associated with adverse health outcomes?
 
-Interest in epigenetic deregulation as a consequence ART has been sparked by reports of higher rates of birth defects after IVF and ICSI, although maternal factors such as age and lifestyle factors also contribute to this [3,4,5](Ericson & Källén 2001; Hansen et al, 2002; Davies et al, 2012).
+Interest in epigenetic deregulation as a consequence ART has been sparked by reports of higher rates of birth defects after IVF and ICSI, although maternal factors such as age and lifestyle factors also contribute to this (Ericson & Källén 2001; Hansen et al, 2002; Davies et al, 2012)[3,4,5].
 
-Similarly, the rates of specific conditions such as cerebral palsy, type-1 diabetes and behavioral disorders are higher in IVF conceived children, but could be attributable to higher rates of multiple births [6](Klemetti et al, 2006).
+Similarly, the rates of specific conditions such as cerebral palsy, type-1 diabetes and behavioral disorders are higher in IVF conceived children, but could be attributable to higher rates of multiple births (Klemetti et al, 2006)[6].
 
 ### Why is ART implicated with epigenetic differences?
 
-A number of studies and meta-analyses have reported higher rates of imprinting disorders for ART as compared to naturally conceived infants [7-10](Cox et al, 2002; DeBaun et al, 2003; Maher et al, 2003; Cortessis et al, 2018; Uk et al, 2018).
-In only a few studies has the potentially confounding effect of maternal age been taken into account [11-12](Uk et al, 2018; Hattori et al, 2019).
-A 2013 meta-analysis taking into consideration maternal age showed that ART conceived infants have a 30% higher rate of birth defects [13](Hansen et al, 2013), which has been confirmed with a more recent update showing equivalent effects with IVF and ICSI [14](Zhao et al, 2020).
+A number of studies and meta-analyses have reported higher rates of imprinting disorders for ART as compared to naturally conceived infants (Cox et al, 2002; DeBaun et al, 2003; Maher et al, 2003; Cortessis et al, 2018; Uk et al, 2018)[7-10].
+In only a few studies has the potentially confounding effect of maternal age been taken into account (Uk et al, 2018; Hattori et al, 2019)[11-12].
+A 2013 meta-analysis taking into consideration maternal age showed that ART conceived infants have a 30% higher rate of birth defects (Hansen et al, 2013)[13], which has been confirmed with a more recent update showing equivalent effects with IVF and ICSI (Zhao et al, 2020)[14].
 
 As ART conceived individuals age, we are beginning to learn about their predisposition to risk of different conditions such as autoimmune, cardiovascular, metabolic and malignancy related maladies.
-There are some limitations with this analysis however, such as the substantial improvements in ART procedures over the years which has lead to lower rates of multiple births [15](Morin & Seli 2018). 
-In the case of childhood cancer, systematic meta-analysis published in 2013 indicates that IVF leads to a 60% higher risk as compared to naturally conceived, however a matched subfertile control group was used in only two of the 25 studies in the meta-analysis [16](Hargreave et al, 2013).
-A later meta-analysis found no significant link between ART and childhood cancer except in the case of cryopreserved embryo transfer, which was associated with a 2.5 fold increased cancer risk, but only when compared to children of fertile women [17](Hargreave et al, 2019).
-It has been argued that ART can increase the risk of cardiometabolic disease, however this is based largely on subclinical features such as small elevation of blood pressure or adiposity for which the association with cardiovascular events and longevity is unclear [18](Vrooman & Bartolomei 2017).
+There are some limitations with this analysis however, such as the substantial improvements in ART procedures over the years which has lead to lower rates of multiple births (Morin & Seli 2018)[15]. 
+In the case of childhood cancer, systematic meta-analysis published in 2013 indicates that IVF leads to a 60% higher risk as compared to naturally conceived, however a matched subfertile control group was used in only two of the 25 studies in the meta-analysis (Hargreave et al, 2013)[16].
+A later meta-analysis found no significant link between ART and childhood cancer except in the case of cryopreserved embryo transfer, which was associated with a 2.5 fold increased cancer risk, but only when compared to children of fertile women (Hargreave et al, 2019)[17].
+It has been argued that ART can increase the risk of cardiometabolic disease, however this is based largely on subclinical features such as small elevation of blood pressure or adiposity for which the association with cardiovascular events and longevity is unclear (Vrooman & Bartolomei 2017)[18].
 
 ### What is the link between ART and DNA methylation?
 
 The associations between subfertility/ART and adverse health outcomes including imprinting and other birth defects implies that epigenetic mechanisms may be involved. 
 Among these mechanisms, DNA methylation has been the most widely investigated, primarily due to the ease at which it can be assayed in clinical samples.
-The focus of methylation analyses has largely been upon imprinted genes, such as H19/IGF2, KCNQ1OT1, PEG3, PEG1, and MEG3 ; but despite this, metaanalysis indicates no consistent association between ART and DNA methylation [19](Lazaraviciute et al, 2014).
+The focus of methylation analyses has largely been upon imprinted genes, such as H19/IGF2, KCNQ1OT1, PEG3, PEG1, and MEG3 ; but despite this, metaanalysis indicates no consistent association between ART and DNA methylation (Lazaraviciute et al, 2014)[19].
 Epigenome-wide methods such as microarray and next generation sequencing have been deployed to identify differences between ART and naturally conceived children, however again the results are inconsistent.
 
-Martino 2013 https://pubmed.ncbi.nlm.nih.gov/23697701/
-Melamed 2015 https://www.tandfonline.com/doi/full/10.4161/15592294.2014.988041
-Choufani 2015 https://academic.oup.com/hmg/article/28/3/372/5102486
-Estill 2016 https://www.ncbi.nlm.nih.gov/pubmed/27288894
-Castillo Fernandes 2017 https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-017-0413-5
-Hajj 2017 https://academic.oup.com/humrep/article/32/8/1761/3859168
-Lizky 2017 https://www.tandfonline.com/doi/full/10.1080/15592294.2017.1336589
-Li 2018	https://academic.oup.com/ije/article/47/3/908/4922690
-Solomon 2018 https://www.tandfonline.com/doi/full/10.1080/15592294.2018.1497386
-Novakovic 2019 https://www.nature.com/articles/s41467-019-11929-9#Bib1
+Choufani et al (2015)[20] conducted a 450K array based EWAS on 88 placental samples, including ART with IVF and ISCI.
+Importantly this study included different fertile and subfertile naturally conceived control groups.
+Estill et al (2016)[21] conducted a 450K array based EWAS on 137 neonatal blood spot samples including IVF and ICSI, including fertile and subfertile naturally conceived control groups.
+This study also identified metastable epialleles differentially methylated between conception types such as SPATC1L and DUSP22.
+Castillo Fernandes et al (2017)[22] Conducted an enrichment sequencing analysis of 82 CBMC and 98 neonatal whole blood samples, finding just one DMR associated with IVF, at C9orf3.
+Hajj et al (2017)[23] analysed 94 cord blood samples from control and ICSI neonates using the 450K array, finding widespread, statistically significant but subtle differences in promoters as well as imprinting control regions.
+Lizky et al (2017)[24] analysed placental 450K array data which included 158 participants, only a small number of which were conceived via ART.
+This study shows that some of the genes with altered methylation also exhibit differential expression.
+Recently, Novakovic et al (2019)[25] performed an EPIC array analysis of neonatal and adult methylation, finding that neonatal epigenetic differences included CHRNE, PRSS16 and TMEM18, but most of these differences did not persist into adulthood.
 
-### What are the current controversies?
+### What are the current controversies? / What is the aim and rationale of this study?
 
-### What is the aim and rationale of this study?
+<TODO>
 
 ## Key references:
 
@@ -102,6 +101,22 @@ Novakovic 2019 https://www.nature.com/articles/s41467-019-11929-9#Bib1
 17. Hargreave M, Jensen A, Hansen MK, et al. Association Between Fertility Treatment and Cancer Risk in Children. JAMA. 2019;322(22):2203-2210. doi:10.1001/jama.2019.18037
 
 18. Vrooman LA, Bartolomei MS. Can assisted reproductive technologies cause adult-onset disease? Evidence from human and mouse. Reprod Toxicol. 2017;68:72-84. doi:10.1016/j.reprotox.2016.07.015
+
+19. Lazaraviciute G, Kauser M, Bhattacharya S, Haggarty P, Bhattacharya S. A systematic review and meta-analysis of DNA methylation levels and imprinting disorders in children conceived by IVF/ICSI compared with children conceived spontaneously [published correction appears in Hum Reprod Update. 2015 Jul-Aug;21(4):555-7]. Hum Reprod Update. 2014;20(6):840-852. doi:10.1093/humupd/dmu033
+
+20. Choufani S, Turinsky AL, Melamed N, et al. Impact of assisted reproduction, infertility, sex and paternal factors on the placental DNA methylome. Hum Mol Genet. 2019;28(3):372-385. doi:10.1093/hmg/ddy321
+
+21. Estill MS, Bolnick JM, Waterland RA, Bolnick AD, Diamond MP, Krawetz SA. Assisted reproductive technology alters deoxyribonucleic acid methylation profiles in bloodspots of newborn infants. Fertil Steril. 2016;106(3):629-639.e10. doi:10.1016/j.fertnstert.2016.05.006
+
+22. Castillo-Fernandez JE, Loke YJ, Bass-Stringer S, et al. DNA methylation changes at infertility genes in newborn twins conceived by in vitro fertilisation. Genome Med. 2017;9(1):28. Published 2017 Mar 24. doi:10.1186/s13073-017-0413-5
+
+23. El Hajj N, Haertle L, Dittrich M, et al. DNA methylation signatures in cord blood of ICSI children. Hum Reprod. 2017;32(8):1761-1769. doi:10.1093/humrep/dex209
+
+24. Litzky JF, Deyssenroth MA, Everson TM, et al. Placental imprinting variation associated with assisted reproductive technologies and subfertility. Epigenetics. 2017;12(8):653-661. doi:10.1080/15592294.2017.1336589
+
+25. Novakovic B, Lewis S, Halliday J, et al. Assisted reproductive technologies are associated with limited epigenetic variation at birth that largely resolves by adulthood. Nat Commun. 2019;10(1):3922. Published 2019 Sep 2. doi:10.1038/s41467-019-11929-9
+
+
 
 ## Other papers
 

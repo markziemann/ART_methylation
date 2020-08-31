@@ -31,21 +31,25 @@ Multidimensional scaling (MDS) plots were used to visualise the variability amon
 These underwent differential methylation analysis using DESeq2 version XX [2](Love et al, 2014).
 
 For each infinium array study, the minfi package (version 1.34.0) was used to import IDAT files into R (Fortin et al, 2017).
-Subset-quantile within array normalization (SWAN) technique was used for normalisation with the missMethyl package version  (Phipson et al, 2016).
+Subset-quantile within array normalization (SWAN) technique was used for normalisation with the missMethyl package version XX (Phipson et al, 2016).
 After normalisation, probes with a detection p-value greater than 0.01 were removed, along with probes mapping to the sex chromosomes. Probes known to overlap a common polymorphism near the 3' end were filtered with minfi's dropLociWithSnps function.
 Datasets then underwent MDS analyses as above.
 Limma version 3.44.3 was used to perform differential methylation analysis [5](Ritchie et al, 2015).
 Differentially methylated probes with FDR corrected p-values < 0.05 were considered significant, called DMPs.
 Enrichment at genomic compartments and CpG island contexts as defined by the Illumina array manifest was determined using the Fisher test comparing either the hyper- or hypo-methylated DMRs with all other detected probes (excluding those filtered).
 Topconfects was used to prioritise probes/gene with the largest confident effect size [6](Harrison et al, 2019).
+
 Enrichment analysis was performed using mitch version 1.0.8 [7](Kaspi & Ziemann 2020), using the average promoter methylation for each gene as input to query Reactome gene sets obtained August 2020 [8](Jassal et al, 2020).
 
 DMRcate version 2.2.2 was used to find differentially methylated regions (DMRs) [9](Peters et al, 2015).
 
 Results of each analysis are made available in the supplementary material (or in Zenodo?).
-Data analysis code has been deposited to GitHub (https://github.com/markziemann/ART_methylation/).
 
 ### Meta-analysis
+
+### Code availability
+
+Data analysis code has been deposited to GitHub (https://github.com/markziemann/ART_methylation/).
 
 ### References 
 
