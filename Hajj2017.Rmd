@@ -22,13 +22,13 @@ eventually be shoved into another Rscript or package but can stay here for now.
 source("meth_functions.R")
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
 # Data import
-
-
+Note: mismatches corrected, one sample removed, see corresponding email from Marcus Dittrich (marcus.dittrich@biozentrum.uni-wuerzburg.de)
+ 
 ```{r,data}
 
 # Downloaded IDAT files from marcus.dittrich@biozentrum.uni-wuerzburg.de 
@@ -227,11 +227,14 @@ top_nat_vs_icsi_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_nat_vs_icsi_inc",
     myann=myann ,beta= beta)
 
+mx=Mval
+name="top_nat_vs_icsi_inc"
+
 head(top_nat_vs_icsi_inc$dma)
 head(top_nat_vs_icsi_inc$dmr)
 ```
 
-```{r,nat_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
+```{r,na t_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
 # include sex chromosomes
 
 samplesheet <- targets
