@@ -1,0 +1,74 @@
+---
+title: "Methods"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+Source: https://github.com/markziemann/ART_methylation/methods.Rmd
+
+### Identification of studies to include
+
+A number of criteria were used to identify suitable studies:
+
+* Genome wide DNA methylation study with the following platforms: Infinium HumanMethylation450 BeadChip 450K, Infinium MethylationEPIC BeadChip, or unbiased high throughput sequencing.
+
+* Includes ART or MAR group and control groups
+
+* N>5 in both the ART/MAR and control groups
+
+The literature search was conducted using NCBI PubMed as well as NCBI GEO; conducted July 2020.
+If the methylation data were not available in GEO, requests were made to the corresponding author via email.
+
+### Data processing
+
+For analysis of MeDIP-seq data (Castillo-Fernandez et al, 2017), aligned read sets were obtained from the European Genome-phenome Archive under accession number EGAS00001002248.
+Methylation based read counts were extracted using MEDIPS version 1.40 [1](Lienhard et al, 2014).
+Multidimensional scaling (MDS) plots were used to visualise the variability among the datasets using the cmdscale function in R version 4.0.2.
+These underwent differential methylation analysis using DESeq2 version XX [2](Love et al, 2014).
+
+For each infinium array study, the minfi package (version 1.34.0) was used to import IDAT files into R (Fortin et al, 2017).
+Subset-quantile within array normalization (SWAN) technique was used for normalisation with the missMethyl package version XX (Phipson et al, 2016).
+After normalisation, probes with a detection p-value greater than 0.01 were removed, along with probes mapping to the sex chromosomes. Probes known to overlap a common polymorphism near the 3' end were filtered with minfi's dropLociWithSnps function.
+Datasets then underwent MDS analyses as above.
+Limma version 3.44.3 was used to perform differential methylation analysis [5](Ritchie et al, 2015).
+Differentially methylated probes with FDR corrected p-values < 0.05 were considered significant, called DMPs.
+Enrichment at genomic compartments and CpG island contexts as defined by the Illumina array manifest was determined using the Fisher test comparing either the hyper- or hypo-methylated DMRs with all other detected probes (excluding those filtered).
+Topconfects was used to prioritise probes/gene with the largest confident effect size [6](Harrison et al, 2019).
+
+Enrichment analysis was performed using mitch version 1.0.8 [7](Kaspi & Ziemann 2020), using the average promoter methylation for each gene as input to query Reactome gene sets obtained August 2020 [8](Jassal et al, 2020).
+
+DMRcate version 2.2.2 was used to find differentially methylated regions (DMRs) [9](Peters et al, 2015).
+
+Results of each analysis are made available in the supplementary material (or in Zenodo?).
+
+### Meta-analysis
+
+### Code availability
+
+Data analysis code has been deposited to GitHub (https://github.com/markziemann/ART_methylation/).
+
+### References 
+
+1. Lienhard M, Grimm C, Morkel M, Herwig R, Chavez L. MEDIPS: genome-wide differential coverage analysis of sequencing data derived from DNA enrichment experiments. Bioinformatics. 2014;30(2):284-286. doi:10.1093/bioinformatics/btt650
+
+2. Love MI, Huber W, Anders S. Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. Genome Biol. 2014;15(12):550. doi:10.1186/s13059-014-0550-8
+
+3. Fortin JP, Triche TJ Jr, Hansen KD. Preprocessing, normalization and integration of the Illumina HumanMethylationEPIC array with minfi. Bioinformatics. 2017;33(4):558-560. doi:10.1093/bioinformatics/btw691
+
+4. Phipson B, Maksimovic J, Oshlack A. missMethyl: an R package for analyzing data from Illumina's HumanMethylation450 platform. Bioinformatics. 2016;32(2):286-288. doi:10.1093/bioinformatics/btv560
+
+5. Ritchie ME, Phipson B, Wu D, et al. limma powers differential expression analyses for RNA-sequencing and microarray studies. Nucleic Acids Res. 2015;43(7):e47. doi:10.1093/nar/gkv007
+
+6. Harrison PF, Pattison AD, Powell DR, Beilharz TH. Topconfects: a package for confident effect sizes in differential expression analysis provides a more biologically useful ranked gene list. Genome Biol. 2019;20(1):67. Published 2019 Mar 28. doi:10.1186/s13059-019-1674-7
+
+7. Kaspi A, Ziemann M. mitch: multi-contrast pathway enrichment for multi-omics and single-cell profiling data. BMC Genomics. 2020;21(1):447. Published 2020 Jun 29. doi:10.1186/s12864-020-06856-9
+
+8. Jassal B, Matthews L, Viteri G, et al. The reactome pathway knowledgebase. Nucleic Acids Res. 2020;48(D1):D498-D503. doi:10.1093/nar/gkz1031
+
+9. Peters TJ, Buckley MJ, Statham AL, et al. De novo identification of differentially methylated regions in the human genome. Epigenetics Chromatin. 2015;8:6. Published 2015 Jan 27. doi:10.1186/1756-8935-8-6
+
+9. 

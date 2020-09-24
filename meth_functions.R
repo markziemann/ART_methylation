@@ -47,14 +47,30 @@ make_volcano <- function(dm,name,mx) {
     points(sig$logFC,-log10(sig$P.Val),cex=0.5,pch=19,col="red")
 }
 
-# Here is a function to make heatmaps 
-make_heatmap <- function(dm,name,mx,n) {
+# Here is a function to make heatmaps based on smallest p-values
+make_heatmap <- function(dm,name,mx,n, groups) {
   topgenes <-  rownames(head(dm[order(dm$P.Value),],n))
   ss <- mx[which(rownames(mx) %in% topgenes),]
   my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  colCols <- as.numeric(as.factor(groups))
+  colCols <- gsub("1","orange",colCols)
+  colCols <- gsub("0","yellow",colCols)
   heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
-      col=my_palette, main=name)
+    ColSideColors=colCols ,  col=my_palette, main=name)
 }
+
+# Here is a function to make heatmaps based on topconfects
+make_heatmap2 <- function(confects,name,mx,n, groups) {
+  topgenes <-  head(confects$table$name,n)
+  ss <- mx[which(rownames(mx) %in% topgenes),]
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  colCols <- as.numeric(as.factor(groups))
+  colCols <- gsub("1","orange",colCols)
+  colCols <- gsub("0","yellow",colCols)
+  heatmap.2(ss,scale="row",margin=c(10, 10),cexRow=0.4,trace="none",cexCol=0.4,
+    ColSideColors=colCols ,  col=my_palette, main=name)
+}
+
 
 # make beeswarm charts
 # dm = a limma differential meth object
@@ -163,19 +179,20 @@ make_circos <- function(dmr) {
 
 # this is a wrapper which creates three charts
 # We will be adding more
-make_dm_plots <- function(dm,name,mx,groups=groups,confects=confects,dmr,comp=comp,cgi=cgi) {
+make_dm_plots <- function(dm,name,mx,mxs,groups=groups,confects=confects,dmr,comp=comp,cgi=cgi) {
     make_volcano(dm,name,mx)
     make_beeswarms(dm ,name , mx , groups , n= 15)
-    make_heatmap(dm , name , mx ,n = 50)
+    make_heatmap(dm , name , mxs ,n = 50, groups)
     make_beeswarms_confects(confects, name, mx, groups, n=15)
-
+    make_heatmap2(confects, name, mxs, n = 50, groups)
+    
     dm_up <- rownames(subset(dm,adj.P.Val<0.05 & logFC>0))
     dm_dn <- rownames(subset(dm,adj.P.Val<0.05 & logFC<0))
     sig <- min(length(dm_up),length(dm_dn))
-    if (sig>0) {
+    if (sig>10) {
       make_forest_plots(comp)
       make_forest_plots(cgi)
-      make_circos( dmr = dmr)
+      make_circos(dmr)
     }  
 }  
 
@@ -230,7 +247,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
       comp <- NULL
       cgi <- NULL
     }
-    make_dm_plots(dm = dm ,name=name , mx=beta, groups= groups, confects=confects,dmr = dmr, comp=comp, cgi=cgi)
+    make_dm_plots(dm = dm ,name=name , mx=beta,mxs=mxs, groups = groups, confects=confects,dmr = dmr, comp=comp, cgi=cgi)
     dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp, "cgi"=cgi)
     return(dat)
 }
@@ -263,7 +280,7 @@ compartment_enrichment <- function(dma) {
   xx=NULL
   xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(up,row.names = 1),by=0, all = TRUE)
   rownames(xx) <- xx[,1]
-  rownames(xx)[1] <- "None"
+  rownames(xx)[1] <- "Intergenic"
   xx[,1] = NULL
   colnames(xx) <- c("all","up")
   xx[is.na(xx)] <- 0
@@ -286,7 +303,7 @@ compartment_enrichment <- function(dma) {
   xx=NULL
   xx <- merge(as.data.frame(all, row.names = 1),as.data.frame(dn,row.names = 1),by=0, all = TRUE)
   rownames(xx) <- xx[,1]
-  rownames(xx)[1] <- "None"
+  rownames(xx)[1] <- "Intergenic"
   xx[,1] = NULL
   colnames(xx) <- c("all","dn")
   xx[is.na(xx)] <- 0

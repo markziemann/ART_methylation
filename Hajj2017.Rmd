@@ -8,10 +8,10 @@ output:
 theme: cosmo
 ---
 
-## Introduction
+# Introduction
 
 
-## Loading packages and functions
+# Loading packages and functions
 
 These packackes will help us to perform vital steps such as normalisation, filtering, 
 differential analysis, etc, and provide information about the array probe annotaions.
@@ -22,13 +22,13 @@ eventually be shoved into another Rscript or package but can stay here for now.
 source("meth_functions.R")
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
-## Data import
-
-
+# Data import
+Note: mismatches corrected, one sample removed, see corresponding email from Marcus Dittrich (marcus.dittrich@biozentrum.uni-wuerzburg.de)
+ 
 ```{r,data}
 
 # Downloaded IDAT files from marcus.dittrich@biozentrum.uni-wuerzburg.de 
@@ -37,7 +37,6 @@ baseDir <- "Hajj"
 # Datasheet converted to CSV, array barcode and location converted to sentrix ID and position, respectively
 targets <- read.metharray.sheet(baseDir)
 rgSet <- read.metharray.exp(targets = targets)
-rgSet
 
 ```
 
@@ -66,8 +65,6 @@ mSetSw <- mSetSw[keep,]
 # exclude SNP probes
 mSetSw <- mapToGenome(mSetSw)
 mSetSw_nosnp <- dropLociWithSnps(mSetSw)
-dim(mSetSw)
-dim(mSetSw_nosnp)
 mSetSw <- mSetSw_nosnp
 
 # exclude sex chromosomes
@@ -94,9 +91,21 @@ beta_flt <- getBeta(mSetFlt)
 
 
 
-## MDS analysis
+# MDS analysis
+
+* __MDS by ART__: 
+
+* __MDS by SEX__: .
+
+* __MDS by SEX and ART__:
+
+* __MDS by CHIP ARRAY__:
+
+* __MDS by SLIDE__:
 
 
+
+## Scree Plot 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 #Scree Plot
 par(mfrow=c(2,1))  
@@ -105,7 +114,7 @@ myscree(Mval_flt,main="excl sex chr")
 
 ```
 
-
+## MDS plot by ICSI status
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ICSI status."}
 sample_groups <- factor(targets$Group)
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -115,7 +124,7 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 mydist <- plotMDS(Mval, labels=targets$FileName,col=colours,main="sex chromosomes included")
 mydist_flt <- plotMDS(Mval_flt, labels=targets$FileName,col=colours,main="sex chromosomes excluded")
 ```
-
+## MDS plot by sex
 ```{r,mds2,fig.width = 8 ,fig.height = 8, fig.cap="Figure 4. MDS plot coloured by sex."}
 sample_groups <- factor(targets$Gender)
 colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
@@ -138,10 +147,53 @@ legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 plotMDS(mydist, labels=targets$FileName, col=colours,main="sex chromosomes included")
 plotMDS(mydist_flt, labels=targets$FileName, col=colours,main="sex chromosomes excluded")
 ```
+## MDS by chip array
+```{r,mds5,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6. MDS plot coloured by chip array"}
+
+sample_groups <- factor(targets$Array)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$Array))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by chip")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$FileName, col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$FileName, col=colours,main="sex chromosomes excluded")
+
+```
+
+## MDS by Slide
+```{r,mds6,fig.width = 8 ,fig.height = 8, fig.cap="Figure 7. MDS plot coloured by slide"}
+sample_groups <- factor(targets$Slide)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$Slide))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by slide")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$FileName, col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$FileName, col=colours,main="sex chromosomes excluded")
+
+```
+
+## MDS by Maternal Age
+```{r,mds7,fig.width = 8 ,fig.height = 8, fig.cap="Figure 8. MDS plot coloured maternal age"}
+targets$catAge <- cut(targets$AgeMother, breaks = c(0,27,35,44), labels = c("A","B","C")) 
+
+sample_groups <- factor(targets$catAge)
+
+colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
+colours <- colour_palette[as.integer(factor(targets$catAge))]
+plot(1,axes = FALSE,xlab="",ylab="",main="MDS by Maternal Age")
+legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
+plotMDS(mydist, labels=targets$FileName, col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=targets$FileName, col=colours,main="sex chromosomes excluded")
+
+```
+
+
 
 ## Differential analysis
 
-* __NAT vs ICSI__: 
+* __NAT (46) vs ICSI (48)__: 
 
 
 
@@ -161,7 +213,7 @@ There are five outputs below:
 
 ### 1
 
-```{r,nat_vs_icsi_incl}
+```{r,nat_vs_icsi_incl, fig.width = 8 ,fig.height = 8}
 # include sex chromosomes
 
 samplesheet <- targets
@@ -175,11 +227,14 @@ top_nat_vs_icsi_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_nat_vs_icsi_inc",
     myann=myann ,beta= beta)
 
+mx=Mval
+name="top_nat_vs_icsi_inc"
+
 head(top_nat_vs_icsi_inc$dma)
 head(top_nat_vs_icsi_inc$dmr)
 ```
 
-```{r,nat_vs_icsi_exc}
+```{r,na t_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
 # include sex chromosomes
 
 samplesheet <- targets
@@ -197,4 +252,33 @@ head(top_nat_vs_icsi_exc$dma)
 head(top_nat_vs_icsi_exc$dmr)
 ```
 
+## Enrichment analysis
 
+We will be using the recently published package mitch to perform enrichment analysis, using
+average promoter methylation change as an indicaator of gene activity.
+Enrichment will be tested with the mitch package.
+
+```{r,genesets}
+library("mitch")
+# gene sets
+download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+    destfile="ReactomePathways.gmt.zip")
+unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+genesets <- gmt_import("ReactomePathways.gmt")
+```
+
+# Run 1D enrichment analysis
+
+One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
+
+```{r,1danalysis}
+top_nat_vs_icsi_exc_mitch <- run_mitch_1d(dma= top_nat_vs_icsi_exc$dma, name="top_nat_vs_icsi_exc_mitch")
+head(top_nat_vs_icsi_exc_mitch,50)
+
+```
+
+## Todo
+
+* repeat elements / CpG islands / GWAM
+
+## References

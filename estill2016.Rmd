@@ -268,19 +268,19 @@ plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes
 
 There are several differential contrasts that would be of interest to us in this study:
 
-* __NAT vs FH__: to see what probes are affected by IVF where the embryos are not frozen.
+* __NAT (43) vs FH (38)__: to see what probes are affected by IVF where the embryos are not frozen.
 
-* __NAT vs FZ__: to see what probes are affected by IVF where the embryos are frozen.
+* __NAT (43) vs FZ (38)__: to see what probes are affected by IVF where the embryos are frozen.
 
-* __NAT vs IUI__: It will be interesting to see if the probes affected by IVF are also sensitive to
+* __NAT (43) vs IUI (18)__: It will be interesting to see if the probes affected by IVF are also sensitive to
 IUI, a process that involves in utero injection of sperm.
 
-* __FH vs FZ__: to see whether freezing results in differential methylation.
+* __FH (38) vs FZ (38)__: to see whether freezing results in differential methylation.
 
-* __NAT vs FH+FZ__: if freezing results in only a small effect, then these groups can be 
+* __NAT (43) vs FH+FZ (76)__: if freezing results in only a small effect, then these groups can be 
 lumped together and provide more power to determine subtle effects of IVF.
 
-* __IUI vs FH+FZ__: It will be interesting to see whether the process of extracting eggs, culturing 
+* __IUI (18) vs FH+FZ (76)__: It will be interesting to see whether the process of extracting eggs, culturing 
 and fertilising in vitro has an effect that is separate to IUI.
 
 The differential analysis is centred around limma to identify differentially methylated probes. 
@@ -307,13 +307,13 @@ now exclude sex chromosomes from downstream analysis.
 In the comparison of NAT and FH samples there were ~150k probes with differential methylation
 (FDR<0.05), with ~120k loss of methylation and ~30k with increased methylation.
 
-```{r,nat_vs_fh_incl}
+```{r,nat_vs_fh_incl, fig.width = 8 ,fig.height = 8}
 
 # include sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
 groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_nat_vs_fh_inc",
     myann=myann ,beta= beta)
@@ -322,15 +322,16 @@ head(top_nat_vs_fh_inc$dma)
 head(top_nat_vs_fh_inc$dmr)
 top_nat_vs_fh_inc$comp
 top_nat_vs_fh_inc$cgi
-
+names(top_nat_vs_fh_inc)
+head(top_nat_vs_fh_inc$confects$table$name)
 ```
 
-```{r,nat_vs_fh_excl}
+```{r,nat_vs_fh_excl, fig.width = 8 ,fig.height = 8}
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
 groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh",
     myann=myann, beta=beta_flt)
@@ -346,11 +347,11 @@ top_nat_vs_fh$cgi
 In the comparison of NAT and FZ samples, there were ~130k probes with lower methylation
 and ~37k with higher methylation.
 
-```{r,nat_vs_fz}
+```{r,nat_vs_fz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("NAT","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz",
     myann=myann, beta=beta_flt)
@@ -365,11 +366,11 @@ top_nat_vs_fz$comp
 In the comparison of NAT and IUI samples there were ~114k probes with reduced methylation
 and ~36k with higher methylation.
 
-```{r,nat_vs_iui}
+```{r,nat_vs_iui, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="IUI")
 groups <- factor(samplesheet$art,levels=c("NAT","IUI"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_iui",
     myann=myann, beta=beta_flt)
@@ -384,11 +385,11 @@ top_nat_vs_iui$comp
 In the comparison of FH and FZ, only ~13k probes were differentially methylated with roughly
 half lower and higher. This suggests that freezing has only a small effect on methylation.
 
-```{r,fh_vs_fz}
+```{r,fh_vs_fz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="FH" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("FH","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz",
     myann=myann, beta=beta_flt)
@@ -405,13 +406,13 @@ to all IVF samples (union of FH and FZ). There were ~200k probes with altered me
 ~157k with lower methylation and ~50k higher. This result points to a major effect of IVF on
 infant genome methylation.
 
-```{r,nat_vs_fhfz}
+```{r,nat_vs_fhfz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="FH" | art=="FZ")
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("NAT","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fx",
     myann=myann, beta=beta_flt)
@@ -431,13 +432,13 @@ FH/FZ comparison which suggests that the process of IVF accounts for only a smal
 variance in methylation. The difference in methylomes could be due to other factors such as subfertility
 or even the effect of hormone therapy.
 
-```{r,iui_vs_fhfz}
+```{r,iui_vs_fhfz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="IUI" | art=="FH" | art=="FZ")
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("IUI","FX"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-
+table(groups)
 top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_iui_vs_fx",
     myann=myann, beta=beta_flt)
@@ -445,7 +446,6 @@ top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
 head(top_iui_vs_fx$dma)
 head(top_iui_vs_fx$dmr)
 top_iui_vs_fx$comp
-
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
@@ -453,7 +453,7 @@ top_iui_vs_fx$comp
 First, we look at the similarity of DMPs altered by fresh and frozen procedures. The overlap is very large.
 This indicates a high degree of similarity between the profiles.
 
-```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
+```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures", fig.width = 8 ,fig.height = 8}
 v1 <- list("FH up" = top_nat_vs_fh$dm_up , 
            "FZ up" = top_nat_vs_fz$dm_up ,
            "FH dn" = top_nat_vs_fh$dm_dn ,
@@ -464,7 +464,7 @@ plot(euler(v1, shape = "ellipse"), quantities = TRUE)
 Now to take a look at whether IUI is similar to IVF fresh and frozen. The overlap is just a large as 
 FH vs FZ.
 
-```{r,venn2,fig.cap="Comparison of probes altered by IUI, fresh and frozen IVF procedures"}
+```{r,venn2,fig.cap="Comparison of probes altered by IUI, fresh and frozen IVF procedures", fig.width = 8 ,fig.height = 8}
 v2 <- list("FH up" = top_nat_vs_fh$dm_up , 
            "FH dn" = top_nat_vs_fh$dm_dn ,
            "IUI up" = top_nat_vs_iui$dm_up ,
@@ -484,7 +484,7 @@ While the above Venn diagrams are suggestive of similarity between contrasts, th
 way to assess this is with correlation analysis. I have chosen Spearman as based on
 the directional p-value ranking metric.
 
-```{r,spearman}
+```{r,spearman, fig.width = 8 ,fig.height = 8}
 mycontrasts <- list("top_nat_vs_fh"=top_nat_vs_fh, "top_nat_vs_fz"=top_nat_vs_fz, "top_nat_vs_fx"=top_nat_vs_fx ,
   "top_nat_vs_iui"=top_nat_vs_iui, "top_fh_vs_fz"=top_fh_vs_fz, "top_iui_vs_fx"=top_iui_vs_fx)
 
@@ -517,7 +517,7 @@ top_fh_vs_fz$dma
 top_nat_vs_fx$dma
 top_iui_vs_fx$dma
 
-```{r,genesets}
+```{r,genesets, fig.width = 8 ,fig.height = 8}
 library("mitch")
 # gene sets
 download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
@@ -530,7 +530,7 @@ genesets <- gmt_import("ReactomePathways.gmt")
 
 One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
 
-```{r,1danalysis}
+```{r,1danalysis, fig.width = 8 ,fig.height = 8}
 top_nat_vs_fh_mitch <- run_mitch_1d(dma= top_nat_vs_fh$dma, name="top_nat_vs_fh_mitch")
 head(top_nat_vs_fh_mitch,50)
 
@@ -553,7 +553,7 @@ head(top_iui_vs_fx_mitch,50)
 
 # Run multi-dimensional enrichment analysis
 
-```{r,mitch}
+```{r,mitch, fig.width = 8 ,fig.height = 8}
 
 xl <- list("nat_vs_fh"=top_nat_vs_fh$dma, "top_nat_vs_fz"=top_nat_vs_fz$dma, "top_nat_vs_iui"=top_nat_vs_iui$dma,
            "top_fh_vs_fz"=top_fh_vs_fz$dma,"top_nat_vs_fx"=top_nat_vs_fx$dma, "top_iui_vs_fx"=top_iui_vs_fx$dma)
@@ -582,7 +582,7 @@ unlink("estill_multi_mitch.pdf")
 
 ## Todo
 
-* repeat elements / CpG islands / GWAM
+* repeat elements / GWAM
 
 ## References
 
@@ -614,3 +614,4 @@ PubMed PMID: 28961746; PubMed Central PMCID: PMC5860089.
 sessionInfo()
 
 ```
+END OF REPORT
