@@ -234,7 +234,7 @@ head(top_nat_vs_icsi_inc$dma)
 head(top_nat_vs_icsi_inc$dmr)
 ```
 
-```{r,na t_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
+```{r,nat_vs_icsi_exc, fig.width = 8 ,fig.height = 8 }
 # include sex chromosomes
 
 samplesheet <- targets
@@ -250,6 +250,10 @@ top_nat_vs_icsi_exc <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_icsi_exc$dma)
 head(top_nat_vs_icsi_exc$dmr)
+
+# Output for Meta-analysis
+write.table(top_nat_vs_icsi_exc$dma,file="hajj_top_nat_vs_icsi_exc.tsv",sep="\t",quote=FALSE) 
+```
 ```
 
 ## Enrichment analysis
@@ -265,6 +269,7 @@ download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip",
     destfile="ReactomePathways.gmt.zip")
 unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
 genesets <- gmt_import("ReactomePathways.gmt")
+
 ```
 
 # Run 1D enrichment analysis
