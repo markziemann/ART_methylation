@@ -26,7 +26,7 @@ source("meth_functions.R")
 
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
+myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
@@ -107,6 +107,8 @@ mSetSw <- mSetSw_nosnp
 # exclude sex chromosomes
 keep <- !(featureNames(mSetSw) %in% ann450k$Name[ann450k$chr %in% c("chrX","chrY")])
 mSetFlt <- mSetSw[keep,]
+
+# exclude cross reactive probes Chen (2013)
 ```
 
 ## Extracting Beta and M-values
@@ -126,38 +128,17 @@ beta_flt <- getBeta(mSetFlt)
 
 ```
 
-## Remove probes that appear to overlap SNP
-
-DOI: https://doi.org/10.1186/s13072-019-0321-6
-
-```{r,snpfilt}
-#testing
-#test <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4, SNP=SNPs.147CommonSingle #,verbose=FALSE)
-#nrow(test)
-# include sex chromosomes
-# evidence of SNP
-#snp_probe_dat <- MethylToSNP(beta, gap.ratio = 0.5, gap.sum.ratio = 0.4,
-#    SNP=SNPs.147CommonSingle ,verbose=FALSE)
-#dim(snp_probe_dat)
-#head(snp_probe_dat)
-#snp_probes <- rownames(snp_probe_dat)
-# >50% confidence of SNP
-#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-# remove SNP probes
-#Mval <- Mval[which(!rownames(Mval) %in% snp_probes),]
-#dim(Mval)
-# evidence of SNP
-#snp_probe_dat <- MethylToSNP(beta_flt, SNP=SNPs.147CommonSingle ,verbose=FALSE)
-#dim(snp_probe_dat)
-#head(snp_probe_dat)
-#snp_probes <- rownames(snp_probe_dat)
-# >50% confidence of SNP
-#nrow(snp_probe_dat[which(snp_probe_dat$confidence>0.5),])
-# remove SNP probes
-#Mval_flt <- Mval_flt[which(!rownames(Mval_flt) %in% snp_probes),]
-#dim(Mval_flt)
+## Gender Check
+```{r, gender"}
+cgx<-rownames(ann450k[which(ann450k$chr %in% "chrX"),])
+cgy<-rownames(ann450k[which(ann450k$chr %in% "chrY"),])
+mvx<-Mval[which(rownames(Mval) %in% cgx),]
+mvy<-Mval[which(rownames(Mval) %in% cgy),]
+plot(colMeans(mvy),colMeans(mvx)) 
+plot(colMeans(mvy))
+plot(colMeans(mvx))
+intersect(cgx,cgy)
 ```
-
 ## MDS analysis
 
 
@@ -243,13 +224,14 @@ There are five outputs below:
 
 5. Heatmap (top probes by topconfect ranking). (TODO)
 
-### 1
+### 1 NAT vs IVF
 
 ```{r,nat_vs_ivf_incl}
 # include sex chromosomes
 
 samplesheet <- subset(targets,`ivf:ch1`=="No" | `ivf:ch1`=="Yes")
 samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+samplesheet <- subset(samplesheet, `subfertility:ch1`=="No")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
 groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
@@ -282,10 +264,13 @@ top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_ivf_exc$dma)
 head(top_nat_vs_ivf_exc$dmr)
+
+# Output for Meta-analysis
+write.table(litzky_top_nat_vs_ivf_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
 ```
 
 
-### 2
+### 2 NAT vs SUB
 
 ```{r,nat_vs_sub_excl}
 # exclude sex chromosomes
@@ -302,11 +287,14 @@ top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_sub_exc$dma)
 head(top_nat_vs_sub_exc$dmr)
+
+# Output for Meta-analysis
+write.table(litzky_top_nat_vs_sub_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
 ```
 
-### 3
+### 3 SUB vs IVF
 
-```{r,sub_vs_IVF_exc}
+```{r,sub_vs_IVF_excl}
 # exclude sex chromosomes
 samplesheet <- subset(targets,`subfertility:ch1`=="Yes")
 samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
@@ -315,15 +303,16 @@ samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 groups <- factor(samplesheet$`IVF:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
-top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_sub_exc",
+top_sub_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_sub_vs_ivf_exc",
     myann=myann ,beta= beta)
 
-head(top_nat_vs_sub_exc$dma)
-head(top_nat_vs_sub_exc$dmr)
+head(top_sub_vs_ivf_exc$dma)
+head(top_sub_vs_ivf_exc$dmr)
+
+# Output for Meta-analysis
+write.table(litzky_top_sub_vs_ivf_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
 ```
-
-
 
 ## Venn diagrams of the differential methylated probes for each contrast
 
@@ -411,8 +400,14 @@ genesets <- gmt_import("ReactomePathways.gmt")
 One dimensional enrichment analysis with REACTOME gene sets using average promoter methylation t-statistic.
 
 ```{r,1danalysis}
+top_nat_vs_ivf_mitch <- run_mitch_1d(dma= top_nat_vs_ivf_exc$dma, name="top_nat_vs_ivf_mitch")
+head(top_nat_vs_ivf_mitch,50)
 
+top_nat_vs_sub_mitch <- run_mitch_1d(dma= top_nat_vs_sub_exc$dma, name="top_nat_vs_sub_mitch")
+head(top_nat_vs_sub_mitch,50)
 
+top_sub_vs_ivf_mitch <- run_mitch_1d(dma= top_sub_vs_ivf_exc$dma, name="top_sub_vs_ivf_mitch")
+head(top_sub_vs_ivf_mitch,50)
 ```
 
 # Run multi-dimensional enrichment analysis
@@ -422,10 +417,6 @@ One dimensional enrichment analysis with REACTOME gene sets using average promot
 
 ```
 
-## Todo
-
-* Peak calling with DMRcate
-* repeat elements / GWAM
 
 ## References
 
