@@ -31,23 +31,34 @@ suppressPackageStartupMessages({
 library("MEDIPS")
   library("DESeq2")
 library("BSgenome.Hsapiens.UCSC.hg19")
+  library("ensembldb")
+  library("EnsDb.Hsapiens.v75")
   })
 
+
 #Annotation
+names(listTables(EnsDb.Hsapiens.v75))
+ensgenes<-genes(EnsDb.Hsapiens.v75)
+enstranscripts<-transcripts(EnsDb.Hsapiens.v75)
+enspromoters<-promoters(EnsDb.Hsapiens.v75,columns=c("gene_id","gene_name"))
+head(enspromoters)
+head(ensgenes)
+
+
+
 ```
+
+
+
 ## counts 
 
 ```{r,counts c}
 counts<-read.table("~/mr.edgeR.c.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
-head(counts)
 mycol<-max(grep(".bam.counts",colnames(counts)))
 counts<-counts[,1:mycol]
-head(counts)
 rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
 counts[,1:4]=NULL
 colnames(counts)<-gsub(".bam.counts","",colnames(counts))
-head(counts)
-summary(counts)
 ```
 ## metadata
 ```{r,metadata}
@@ -161,7 +172,7 @@ sig <- subset(dge,padj<0.05)
 SIG = nrow(sig)
 DN = nrow(subset(sig,log2FoldChange<0))
 UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DGEs,", UP ,"upregulated,", DN, "downregulated")
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 # smear plot optional
 plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -170,6 +181,7 @@ ylim=c(-3,3),ylab="log2 fold change"
 ,pch=19,col="#838383")
 points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
 mtext((HEADER),cex=1.0)
+
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -186,10 +198,18 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+## Annotation
+head(dge)
+
+
+
+
+
 ```
 ## Natural Vs GIFT
 
-```{r,dm2}
+```{r,dm2,fig.width=8,fig.height=8}
 NAME = "CBMC_natural_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -208,6 +228,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -229,7 +255,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## Natural Vs ICSI fresh
 
-```{r,dm3}
+```{r,dm3,fig.width=8,fig.height=8}
 NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -248,6 +274,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -269,7 +301,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## Natural Vs ICSI frozen
 
-```{r,dm4}
+```{r,dm4,fig.width=8,fig.height=8}
 NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -288,6 +320,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -308,7 +346,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ICSI fresh Vs ICSI frozen
 
-```{r,dm5}
+```{r,dm5,fig.width=8,fig.height=8}
 NAME = "CBMC_intracytoplasmic_sperm_injection_fresh_embryo_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
@@ -327,6 +365,13 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -348,7 +393,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs GIFT
 
-```{r,dm6}
+```{r,dm6,fig.width=8,fig.height=8}
 NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -367,6 +412,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -387,7 +438,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs ICSI fresh
 
-```{r,dm7}
+```{r,dm7,fig.width=8,fig.height=8}
 NAME = "CBMC_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -406,6 +457,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -428,7 +485,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs ICSI frozen
 
-```{r,dm8}
+```{r,dm8,fig.width=8,fig.height=8}
 NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -447,6 +504,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -469,7 +532,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## GIFT vs ICSI fresh
 
-```{r,dm9}
+```{r,dm9,fig.width=8,fig.height=8}
 NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -488,6 +551,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -509,7 +578,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## GIFT vs ICSI frozen
 
-```{r,dm10}
+```{r,dm10,fig.width=8,fig.height=8}
 NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -528,6 +597,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -552,20 +627,16 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ```{r,counts w}
 counts<-read.table("~/mr.edgeR.w.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
-head(counts)
 mycol<-max(grep(".bam.counts",colnames(counts)))
 counts<-counts[,1:mycol]
-head(counts)
 rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
 counts[,1:4]=NULL
 colnames(counts)<-gsub(".bam.counts","",colnames(counts))
-head(counts)
-summary(counts)
 ```
 
 ## Natural Vs Ovarian stimulation
 
-```{r,dm1}
+```{r,dmw1,fig.width=8,fig.height=8}
 NAME = "WCB_natural_vs_ovarian_stimulation"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | ovarian_stimulation=="yes")
 samplesheet$groups <- factor(samplesheet$ovarian_stimulation,levels=c("no","yes"))
@@ -588,6 +659,12 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -608,7 +685,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## Natural Vs GIFT
 
-```{r,dmw2}
+```{r,dmw2,fig.width=8,fig.height=8}
 NAME = "WBC_natural_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -627,6 +704,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -648,7 +731,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## Natural Vs ICSI fresh
 
-```{r,dmw3}
+```{r,dmw3,fig.width=8,fig.height=8}
 NAME = "WCB_natural_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -667,6 +750,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -688,7 +777,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## Natural Vs ICSI frozen
 
-```{r,dmw4}
+```{r,dmw4,fig.width=8,fig.height=8}
 NAME = "WCB_natural_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -707,6 +796,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -729,7 +824,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ICSI fresh Vs ICSI frozen
 
-```{r,dmw5}
+```{r,dmw5,fig.width=8,fig.height=8}
 NAME = "WCB_intracytoplasmic_sperm_injection_fresh_embryo_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
@@ -748,6 +843,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -770,7 +871,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs GIFT
 
-```{r,dmw6}
+```{r,dmw6,fig.width=8,fig.height=8}
 NAME = "WCB_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -789,6 +890,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -810,7 +917,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs ICSI fresh
 
-```{r,dmw7}
+```{r,dmw7,fig.width=8,fig.height=8}
 NAME = "WCB_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -829,6 +936,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -851,7 +964,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## ovarian stimulation vs ICSI frozen
 
-```{r,dmw8}
+```{r,dmw8,fig.width=8,fig.height=8}
 NAME = "WCB_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -870,6 +983,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -892,7 +1011,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## GIFT vs ICSI fresh
 
-```{r,dmw9}
+```{r,dmw9,fig.width=8,fig.height=8}
 NAME = "WCB_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -911,6 +1030,12 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
+
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
 
 #volcano plot
@@ -932,7 +1057,7 @@ heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.
 
 ## GIFT vs ICSI frozen
 
-```{r,dmw10}
+```{r,dmw10,fig.width=8,fig.height=8}
 NAME = "WCB_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -952,6 +1077,12 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+
 
 #volcano plot
 plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
@@ -969,24 +1100,61 @@ my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
 ```
+## summary of DMRs in CBMCs
 
-
-* Natural Vs Ovarian stimulation- DMR-
+* Natural Vs Ovarian stimulation
+DMR- 1336
+hypermethylated- 521
+hypomethylated- 815
 
 * Natural Vs GIFT
+DMR- 0
+hypermethylated- 0
+hypomethylated- 0
 
 * Natural Vs ICSI fresh
+DMR-338
+hypermethylated-304
+hypomethylated-34
 
 * Natural Vs ICSI frozen
+DMR- 261
+hypermethylated- 248
+hypomethylated- 13
 
 * ICSI fresh Vs frozen
+DMR- 1
+hypermethylated- 0
+hypomethylated- 0
 
 * Ovarian stimulation Vs GIFT
+DMR- 0
+hypermethylated- 0
+hypomethylated- 0
 
 * Ovarian stimulation Vs ICSI fresh 
+DMR- 0
+hypermethylated- 0
+hypomethylated- 0
 
 * Ovarian stimulation Vs ICSI frozen
+DMR- 2
+hypermethylated- 0
+hypomethylated- 2
 
 * GIFT Vs ICSI fresh
+DMR- 0
+hypermethylated- 0
+hypomethylated- 0
 
 * GIFT Vs ICSI frozen
+DMR-2
+hypermethylated-2
+hypomethylated-0
+
+
+## summary of DMRs in WBMCs
+
+
+
+
