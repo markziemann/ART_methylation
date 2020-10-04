@@ -248,7 +248,7 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
       cgi <- NULL
     }
     make_dm_plots(dm = dm ,name=name , mx=beta,mxs=mxs, groups = groups, confects=confects,dmr = dmr, comp=comp, cgi=cgi)
-    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp, "cgi"=cgi)
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp, "cgi"=cgi, "fit"=fit.reduced)
     return(dat)
 }
 
