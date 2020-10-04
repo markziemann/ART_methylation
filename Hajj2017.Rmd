@@ -248,8 +248,19 @@ top_nat_vs_icsi_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_icsi_exc",
     myann=myann ,beta= beta)
 
+
+top_nat_vs_icsi_exc$dma$unmeth <- "T"
+top_nat_vs_icsi_exc$dma$meth <- "C"
+top_nat_vs_icsi_exc$fit$SE <- sqrt(top_nat_vs_icsi_exc$fit$s2.post) * top_nat_vs_icsi_exc$fit$stdev.unscaled
+
+
 head(top_nat_vs_icsi_exc$dma)
 head(top_nat_vs_icsi_exc$dmr)
+head(top_nat_vs_icsi_exc$fit)
+head(top_nat_vs_icsi_exc$fit$coefficients)
+head(top_nat_vs_icsi_exc$fit$SE)
+
+
 
 # Output for Meta-analysis
 write.table(top_nat_vs_icsi_exc$dma,file="hajj_top_nat_vs_icsi_exc.tsv",sep="\t",quote=FALSE) 
