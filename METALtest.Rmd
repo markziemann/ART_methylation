@@ -1,0 +1,37 @@
+---
+title: "TestMETAL"
+author: "The methylation in ART meta-analysis group"
+date: "10/1/2020"
+output: html_document
+---
+
+```{r, download}
+download.file("http://csg.sph.umich.edu/abecasis/Metal/download/GlucoseExample.tar.gz", destfile = "GlucoseExample.tar.gz")
+untar("GlucoseExample.tar.gz")
+list.files("GlucoseExample/")
+
+
+
+```
+
+MARKER = Row.names
+DEFAULT = (number of participants)
+ALLELE = unmeth meth
+FREQ = AveExpr
+EFFECT = logFC
+STDERR = SE
+PVAL = P.Value
+
+
+```{bash, metal1}
+cd GlucoseExample
+ls 
+metal metal.txt
+ls
+head DGI_three_regions.txt
+cat metal.txt
+
+PROCESS DGI_three_regions.txt
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
