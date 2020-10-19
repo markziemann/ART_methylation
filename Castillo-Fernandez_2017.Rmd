@@ -19,7 +19,6 @@ suppressPackageStartupMessages({
   library("topconfects")
   library("minfi")
   library("IlluminaHumanMethylation450kmanifest")
-  library("MethylToSNP")
   library("RColorBrewer")
   library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
   library("eulerr")
