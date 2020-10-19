@@ -1,8 +1,8 @@
 ---
-title: "Castillo-Fernandez et al 2017"
+title: "Castillo-Fernandez.2017.Rmd"
 author: "Mary"
 date: "8/3/2020"
-output: html_document
+output:
 ---
 
 
@@ -142,7 +142,7 @@ DN = nrow(subset(sig,log2FoldChange<0))
 UP = nrow(subset(sig,log2FoldChange>0))
 HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
-# smear plot optional
+# smear plot
 plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
 xlab="log2 base mean",
 ylim=c(-3,3),ylab="log2 fold change"
@@ -306,14 +306,13 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm1",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm1",mx=y,groups=mygroups,n=15)
 
-
 myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 ```
-## Natural Vs GIFT
 
+## Natural Vs GIFT
 ```{r,dm2,fig.width=8,fig.height=8}
 NAME = "CBMC_natural_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
@@ -334,27 +333,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -365,34 +347,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm2",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm2",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -418,27 +376,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -449,34 +390,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm3",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm3",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -502,27 +419,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -533,35 +433,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm4",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm4",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## ICSI fresh Vs ICSI frozen
@@ -572,7 +447,6 @@ samplesheet<-subset(mdc, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
 samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
 counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
-
 
 # filter genes with fewer than 10 reads per sample
 y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
@@ -587,28 +461,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -619,34 +475,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm5",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm5",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -672,28 +504,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue",pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
 confects <- deseq2_confects(res)
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -704,35 +518,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm6",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm6",mx=y,groups=mygroups,n=15)
 
-
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -757,28 +546,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -789,34 +560,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm7",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm7",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -842,28 +589,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -874,34 +603,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm8",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm8",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -927,28 +632,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -959,34 +646,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm9",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm9",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## GIFT vs ICSI frozen
@@ -1011,28 +674,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1043,34 +688,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dm10",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dm10",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -1110,28 +731,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1142,34 +745,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw1",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw1",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## Natural Vs GIFT
@@ -1194,28 +773,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1226,34 +787,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw2",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw2",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## Natural Vs ICSI fresh
@@ -1278,28 +815,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1310,35 +829,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw3",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw3",mx=y,groups=mygroups,n=15)
 
-
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## Natural Vs ICSI frozen
@@ -1363,28 +857,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1395,34 +871,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw4",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw4",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -1448,28 +900,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1480,34 +914,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw5",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw5",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -1533,28 +943,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1565,34 +957,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw6",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw6",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -1617,28 +985,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1649,34 +999,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw7",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw7",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -1702,28 +1028,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1734,34 +1042,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw8",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw8",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 
@@ -1787,28 +1071,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1819,34 +1085,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw9",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw9",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 
 ## GIFT vs ICSI frozen
@@ -1871,28 +1113,10 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
-
-
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
 #beeswarm charts
 confects <- deseq2_confects(res)
@@ -1903,34 +1127,10 @@ mygroups<-factor(mygroups)
 make_beeswarm2(dm=dge,name="dmw10",mx=y,groups=mygroups,n=15)
 make_beeswarms_confects2(confects=confects,name="dmw10",mx=y,groups=mygroups,n=15)
 
-## Annotation
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
-
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
-
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
-
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 ## summary of DMRs in CBMCs
 
@@ -1988,5 +1188,7 @@ hypomethylated-0
 ## summary of DMRs in WBMCs
 
 
-
+```{r,session info}
+sessionInfo()
+```
 
