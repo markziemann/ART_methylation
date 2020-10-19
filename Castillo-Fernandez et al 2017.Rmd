@@ -33,9 +33,10 @@ library("MEDIPS")
 library("BSgenome.Hsapiens.UCSC.hg19")
   library("ensembldb")
   library("EnsDb.Hsapiens.v75")
+  library("GenomicRanges")
   })
-
-
+```
+```{r,anno}
 #Annotation
 names(listTables(EnsDb.Hsapiens.v75))
 ensgenes<-genes(EnsDb.Hsapiens.v75)
@@ -43,9 +44,134 @@ enstranscripts<-transcripts(EnsDb.Hsapiens.v75)
 enspromoters<-promoters(EnsDb.Hsapiens.v75,columns=c("gene_id","gene_name"))
 head(enspromoters)
 head(ensgenes)
+```
+
+```{r,functions}
+#customised beeswarm chart for MEDIP Seq data
+make_beeswarm2<- function(dm,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  rownames(head(dm[order(dm$pvalue),],n))
+    mx<-mx/colSums(mx)*1e6
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+   for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,cex=0.4, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
+
+#customised beeswarm chart(confects) for MEDIP Seq data
+make_beeswarms_confects2 <- function(confects,name,mx,groups,n=15) {
+    par(mar=c(3,3,1,1))
+    NCOLS=5
+    NROWS=floor(n/NCOLS)
+    if (n %% NCOLS > 0) { NROWS <- NROWS + 1 }
+    par(mfrow=c(NROWS, NCOLS))
+    topgenes <-  head(confects$table,n)$name
+    mx<-mx/colSums(mx)*1e6
+    ss <- mx[which(rownames(mx) %in% topgenes),]
+    n <- 1:n
+    g1name=levels(groups)[1]
+    g2name=levels(groups)[2]
+    g1dat <- ss[n,which(groups == g1name)]
+    g2dat <- ss[n,which(groups == g2name)]
+    g1l <-lapply(split(g1dat, row.names(g1dat)), unlist)
+    g2l <-lapply(split(g2dat, row.names(g2dat)), unlist)
+
+    for (i in n) {
+      mydat <- list(g1l[[i]],g2l[[i]])
+        beeswarm(mydat,cex=0.4, pch=19,
+        las=2, cex.lab=0.6, main=names( g1l )[i] , 
+        ylab="",labels = c(g1name,g2name))
+      grid()
+    }
+}
 
 
 
+# Annotation 
+anno<-function(dge,ensgenes){
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+list("dge"=dge,"gr_up"=gr_up,"gr_down"=gr_down)
+}
+
+
+# volcano and smear plot
+volcanosmear<-function(dge){
+sig <- subset(dge,padj<0.05)
+SIG = nrow(sig)
+DN = nrow(subset(sig,log2FoldChange<0))
+UP = nrow(subset(sig,log2FoldChange>0))
+HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+
+# smear plot optional
+plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
+xlab="log2 base mean",
+ylim=c(-3,3),ylab="log2 fold change"
+,pch=19,col="#838383")
+points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
+mtext((HEADER),cex=1.0)
+
+
+#volcano plot
+plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
+xlab="log2 fold change",
+ylab="log10 pvalue"
+,pch=19,col="#838383")
+points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
+mtext((HEADER),cex=1.0)
+}
+
+#heatmap chart
+heatmaps<-function(samplesheet,dge,confects){
+mygroups<-as.numeric(samplesheet$groups)
+colCols<-gsub("1","yellow",mygroups)
+colCols<-gsub("2","orange",colCols)
+my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+dgem<-as.matrix(dge[1:50,7:ncol(dge)])
+heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+rows<-head(confects$table$index,50)
+dgem<-as.matrix(dge[rows,7:ncol(dge)])
+heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+}
 ```
 
 
@@ -167,45 +293,24 @@ zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 
-# optional
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+confects <- deseq2_confects(res)
+head(confects$table)
+volcanosmear(dge)
+heatmaps(samplesheet,dge,confects)
 
-# smear plot optional
-plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 base mean",
-ylim=c(-3,3),ylab="log2 fold change"
-,pch=19,col="#838383")
-points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
+#beeswarm charts
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","os",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm1",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm1",mx=y,groups=mygroups,n=15)
 
 
-#volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
-
-#heatmap chart
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
-
-## Annotation
-head(dge)
-
-
-
-
-
+myanno<-anno(dge,ensgenes)
+head(myanno$dge)
+myanno$gr_up
+myanno$gr_down
 ```
 ## Natural Vs GIFT
 
@@ -250,6 +355,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","gift",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm2",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm2",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -296,6 +439,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","icsi",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm3",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm3",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -342,6 +523,45 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm4",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm4",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
+
 ```
 
 ## ICSI fresh Vs ICSI frozen
@@ -352,6 +572,7 @@ samplesheet<-subset(mdc, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
 samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
 counts_f<-counts[,colnames(counts) %in% rownames(samplesheet)]
+
 
 # filter genes with fewer than 10 reads per sample
 y <- counts_f[which(rowSums(counts_f)/ncol(counts_f)>=(10)),]
@@ -388,6 +609,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","icsi.fh",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm5",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm5",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -428,12 +687,52 @@ points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
 mtext((HEADER),cex=1.0)
 
 #heatmap chart
+confects <- deseq2_confects(res)
 mygroups<-as.numeric(samplesheet$groups)
 colCols<-gsub("1","yellow",mygroups)
 colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","gift",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm6",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm6",mx=y,groups=mygroups,n=15)
+
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -480,13 +779,51 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","icsi.fh",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm7",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm7",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
 ## ovarian stimulation vs ICSI frozen
 
 ```{r,dm8,fig.width=8,fig.height=8}
-NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
+NAME = "CBMC_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
 samplesheet$sex <- factor(samplesheet$gender,levels=c("male","female"))
@@ -527,6 +864,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm8",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm8",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -574,6 +949,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","gift",mygroups)
+mygroups<-gsub("yes","icsi.fh",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm9",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm9",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## GIFT vs ICSI frozen
@@ -620,6 +1033,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","gift",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dm10",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dm10",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -681,6 +1132,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","os",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw1",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw1",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## Natural Vs GIFT
@@ -727,6 +1216,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","gift",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw2",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw2",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## Natural Vs ICSI fresh
@@ -773,6 +1300,45 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","icsi.fh",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw3",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw3",mx=y,groups=mygroups,n=15)
+
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## Natural Vs ICSI frozen
@@ -819,6 +1385,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","nat",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw4",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw4",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -866,6 +1470,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","icsi.fh",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw5",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw5",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -913,6 +1555,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","gift",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw6",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw6",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -959,6 +1639,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","icsi.fh",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw7",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw7",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -1006,6 +1724,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","os",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw8",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw8",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 
@@ -1053,6 +1809,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","gift",mygroups)
+mygroups<-gsub("yes","icsi.fh",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw9",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw9",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 
 ## GIFT vs ICSI frozen
@@ -1099,6 +1893,44 @@ colCols<-gsub("2","orange",colCols)
 my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
 dgem<-as.matrix(dge[1:50,7:ncol(dge)])
 heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+
+#beeswarm charts
+confects <- deseq2_confects(res)
+mygroups<-samplesheet$groups
+mygroups<-gsub("no","gift",mygroups)
+mygroups<-gsub("yes","icsi.fz",mygroups)
+mygroups<-factor(mygroups)
+make_beeswarm2(dm=dge,name="dmw10",mx=y,groups=mygroups,n=15)
+make_beeswarms_confects2(confects=confects,name="dmw10",mx=y,groups=mygroups,n=15)
+
+## Annotation
+dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+dge$chr<-gsub("chr","",dge$chr)
+dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+
+sig<-subset(dge,pvalue<.05)
+sig_down<-subset(sig,log2FoldChange<0)
+sig_up<-subset(sig,log2FoldChange>0)
+
+gr_up<-GRanges(seqnames=sig_up$chr,
+ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+ol_up<-distanceToNearest(gr_up, ensgenes)
+ol_up
+gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+gr_up$distance <- elementMetadata(ol_up)
+gr_up
+
+gr_down<-GRanges(seqnames=sig_down$chr,
+ranges=IRanges(start = sig_down$start , end = sig_down$end))
+gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+ol_down<-distanceToNearest(gr_down, ensgenes)
+ol_down
+gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+gr_down$distance <- elementMetadata(ol_down)
+gr_down
+
 ```
 ## summary of DMRs in CBMCs
 
