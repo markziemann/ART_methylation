@@ -181,9 +181,9 @@ heatmaps<-function(samplesheet,dge,confects){
 
 ## counts 
 
-```{r,counts c}
+```{r,counts}
 
-counts<-read.table("~/mr.edgeR.c.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
+counts<-read.table("mr.edgeR.c.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
 mycol<-max(grep(".bam.counts",colnames(counts)))
 counts<-counts[,1:mycol]
 rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
@@ -196,8 +196,8 @@ colnames(counts)<-gsub(".bam.counts","",colnames(counts))
 
 ```{r,metadata}
 
-sf1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
-rs1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+sf1<-read.table("metadata/EGAD00001003159_metadata/Sample_File.map",stringsAsFactors = FALSE) 
+rs1<-read.table("metadata/EGAD00001003159_metadata/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
 rs1[,ncol(rs1)]=NULL
 md1<-apply(rs1,2,function(x){
   sapply(strsplit(x,"="),"[[",2)
@@ -207,8 +207,8 @@ colnames(md1)<-sapply(strsplit(headers[,1],"="), "[[",1)
 rownames(md1)<-sf1[,1]
 md1<-as.data.frame(md1)
 
-sf2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
-rs2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+sf2<-read.table("metadata/EGAD00001003158_metadata/Sample_File.map",stringsAsFactors = FALSE) 
+rs2<-read.table("metadata/EGAD00001003158_metadata/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
 rs2[,ncol(rs2)]=NULL
 md2<-apply(rs2,2,function(x){
   sapply(strsplit(x,"="),"[[",2)
