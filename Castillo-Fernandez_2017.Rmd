@@ -181,14 +181,24 @@ heatmaps<-function(samplesheet,dge,confects){
 
 ## counts 
 
-```{r,counts}
+```{r,counts,fig.width=8,fig.height=8}
 
-counts<-read.table("mr.edgeR.c.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
-mycol<-max(grep(".bam.counts",colnames(counts)))
-counts<-counts[,1:mycol]
-rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
-counts[,1:4]=NULL
-colnames(counts)<-gsub(".bam.counts","",colnames(counts))
+counts <- read.table("mr.edgeR.c.tsv.gz",sep="\t",header=TRUE,row.names=1)
+mycol <- max(grep(".bam.counts",colnames(counts)))
+counts <- counts[,1:mycol]
+rownames(counts) <- paste(counts$chr,counts$start, counts$stop)
+counts[,1:4] = NULL
+colnames(counts) <- gsub(".bam.counts","",colnames(counts))
+dim(counts)
+# exclude X, Y and MT
+counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrMT",rownames(counts),invert=TRUE),]
+dim(counts)
+
+# barplot of reads per sample
+par(mar=c(5,10,5,3))
+barplot(colSums(counts),horiz=TRUE,las=2,main="number of reads per sample",cex.names=0.5)
 
 ```
 
@@ -300,7 +310,6 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
-
 confects <- deseq2_confects(res)
 head(confects$table)
 volcanosmear(dge)
@@ -318,6 +327,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm1.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm1confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm1.rds")
 
 ```
 
@@ -363,6 +376,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dm2.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm2confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm2.rds")
+
 ```
 
 ## Natural Vs ICSI fresh
@@ -406,6 +423,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm3.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm3confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm3.rds")
 
 ```
 
@@ -452,6 +473,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dm4.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm4confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm4.rds")
+
 ```
 
 ## ICSI fresh Vs ICSI frozen
@@ -495,6 +520,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm5.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm5confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm5.rds")
 
 ```
 
@@ -540,6 +569,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dm6.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm6confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm6.rds")
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -583,6 +616,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm7.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm7confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm7.rds")
 
 ```
 
@@ -628,6 +665,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dm8.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm8confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm8.rds")
+
 ```
 
 ## GIFT vs ICSI fresh
@@ -671,6 +712,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm9.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm9confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm9.rds")
 
 ```
 
@@ -716,18 +761,32 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dm10.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm10confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm10.rds")
+
 ```
 
 ## WMBC 
 
-```{r,counts w}
+```{r,counts w,fig.width=8,fig.height=8}
 
-counts<-read.table("~/mr.edgeR.w.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
+counts<-read.table("mr.edgeR.w.tsv.gz",sep="\t",header=TRUE,row.names=1)
 mycol<-max(grep(".bam.counts",colnames(counts)))
 counts<-counts[,1:mycol]
 rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
 counts[,1:4]=NULL
 colnames(counts)<-gsub(".bam.counts","",colnames(counts))
+dim(counts)
+# exclude X, Y and MT
+counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrMT",rownames(counts),invert=TRUE),]
+dim(counts)
+
+# barplot of reads per sample
+par(mar=c(5,10,5,3))
+barplot(colSums(counts),horiz=TRUE,las=2,main="number of reads per sample",cex.names=0.5)
 
 ```
 
@@ -776,6 +835,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dmw1.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw1confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw1.rds")
+
 ```
 
 ## Natural Vs GIFT
@@ -819,6 +882,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw2.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw2confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw2.rds")
 
 ```
 
@@ -864,6 +931,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dmw3.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw3confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw3.rds")
+
 ```
 
 ## Natural Vs ICSI frozen
@@ -907,6 +978,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw4.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw4confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw4.rds")
 
 ```
 
@@ -952,6 +1027,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dmw5.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw5confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw5.rds")
+
 ```
 
 ## ovarian stimulation vs GIFT
@@ -995,6 +1074,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw6.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw6confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw6.rds")
 
 ```
 
@@ -1040,6 +1123,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dmw7.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw7confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw7.rds")
+
 ```
 
 ## ovarian stimulation vs ICSI frozen
@@ -1083,6 +1170,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw8.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw8confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw8.rds")
 
 ```
 
@@ -1128,6 +1219,10 @@ head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
 
+write.table(dge,file="dmw9.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw9confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw9.rds")
+
 ```
 
 ## GIFT vs ICSI frozen
@@ -1171,6 +1266,10 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw10.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw10confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw10.rds")
 
 ```
 
