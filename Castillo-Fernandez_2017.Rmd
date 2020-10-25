@@ -193,7 +193,7 @@ dim(counts)
 # exclude X, Y and MT
 counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
 counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
-counts <- counts[grep("chrMT",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrM",rownames(counts),invert=TRUE),]
 dim(counts)
 
 # barplot of reads per sample
@@ -781,7 +781,7 @@ dim(counts)
 # exclude X, Y and MT
 counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
 counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
-counts <- counts[grep("chrMT",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrM",rownames(counts),invert=TRUE),]
 dim(counts)
 
 # barplot of reads per sample
