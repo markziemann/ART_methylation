@@ -238,15 +238,13 @@ groups <- factor(samplesheet$`ivf:ch1`,levels=c("No","Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 
-  mx=Mval_flt
-  name="top_nat_vs_ivf_inc"
     
 top_nat_vs_ivf_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_inc",
     myann=myann ,beta= beta)
 
-head(top_nat_vs_ivf_inc$dma)
-head(top_nat_vs_ivf_inc$dmr)
+
+
 ```
 
 ```{r,nat_vs_ivf_excl}
@@ -262,11 +260,49 @@ top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ivf_exc",
     myann=myann ,beta= beta)
 
+# Allele
+top_nat_vs_ivf_exc$dma$unmeth <- "T"
+top_nat_vs_ivf_exc$dma$meth <- "C"
+top_nat_vs_ivf_exc$fit$SE <- sqrt(top_nat_vs_ivf_exc$fit$s2.post) * top_nat_vs_ivf_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_ivf_metal <-top_nat_vs_ivf_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_ivf_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_ivf_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsYes")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_ivf_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsYes")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_ivf_metal <- merge(top_nat_vs_ivf_metal, fitCE)
+top_nat_vs_ivf_metal <- merge(top_nat_vs_ivf_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$`ivf:ch1` == "No",]
+cases <- samplesheet[samplesheet$`ivf:ch1` == "Yes",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_ivf_metal$N <- Neff
+
+# Output for Meta-analysis 
+write.table(top_nat_vs_ivf_metal, file="NATvsIVF/litzky_top_nat_vs_ivf_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+
+
 head(top_nat_vs_ivf_exc$dma)
 head(top_nat_vs_ivf_exc$dmr)
+head(top_nat_vs_ivf_metal)
 
-# Output for Meta-analysis
-write.table(litzky_top_nat_vs_ivf_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
 ```
 
 
@@ -285,33 +321,110 @@ top_nat_vs_sub_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_sub_exc",
     myann=myann ,beta= beta)
 
-head(top_nat_vs_sub_exc$dma)
-head(top_nat_vs_sub_exc$dmr)
+# Allele
+top_nat_vs_sub_exc$dma$unmeth <- "T"
+top_nat_vs_sub_exc$dma$meth <- "C"
+top_nat_vs_sub_exc$fit$SE <- sqrt(top_nat_vs_sub_exc$fit$s2.post) * top_nat_vs_sub_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_sub_metal <-top_nat_vs_sub_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_sub_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_sub_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsYes")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_sub_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsYes")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_sub_metal <- merge(top_nat_vs_sub_metal, fitCE)
+top_nat_vs_sub_metal <- merge(top_nat_vs_sub_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$`subfertility:ch1` == "No",]
+cases <- samplesheet[samplesheet$`subfertility:ch1` == "Yes",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_sub_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(litzky_top_nat_vs_sub_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
+write.table(top_nat_vs_sub_metal, file="NATvsHypo/litzky_top_nat_vs_sub_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+
+
+head(top_nat_vs_sub_exc$dma)
+head(top_nat_vs_sub_exc$dmr)
+head(top_nat_vs_sub_metal) 
 ```
 
 ### 3 SUB vs IVF
 
 ```{r,sub_vs_IVF_excl}
 # exclude sex chromosomes
-samplesheet <- subset(targets,`subfertility:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
+targets$subivf <- paste(targets$`subfertility:ch1`, targets$`ivf:ch1`, sep = ("_"))
+samplesheet <- subset(targets, subivf=="Yes_No" | subivf == "Yes_Yes")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 
-groups <- factor(samplesheet$`IVF:ch1`,levels=c("No","Yes"))
+groups <- factor(samplesheet$subivf,levels=c("Yes_No","Yes_Yes"))
 sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
 
 top_sub_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_sub_vs_ivf_exc",
     myann=myann ,beta= beta)
 
-head(top_sub_vs_ivf_exc$dma)
-head(top_sub_vs_ivf_exc$dmr)
+
+# Allele
+top_sub_vs_ivf_exc$dma$unmeth <- "T"
+top_sub_vs_ivf_exc$dma$meth <- "C"
+top_sub_vs_ivf_exc$fit$SE <- sqrt(top_sub_vs_ivf_exc$fit$s2.post) * top_sub_vs_ivf_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_sub_vs_ivf_metal <-top_sub_vs_ivf_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_sub_vs_ivf_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_sub_vs_ivf_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsYes_Yes")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_sub_vs_ivf_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsYes_Yes")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_sub_vs_ivf_metal <- merge(top_sub_vs_ivf_metal, fitCE)
+top_sub_vs_ivf_metal <- merge(top_sub_vs_ivf_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$`IVF:ch1` == "No",]
+cases <- samplesheet[samplesheet$`IVF:ch1` == "Yes",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_sub_vs_ivf_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(litzky_top_sub_vs_ivf_exc$dma,file="filename.tsv",sep="\t",quote=FALSE) 
+dir.create("SUBvsIVF")
+write.table(top_sub_vs_ivf_metal, file="SUBvsIVF/litzky_top_top_sub_vs_ivf_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+
+
+head(top_nat_vs_sub_exc$dma)
+head(top_nat_vs_sub_exc$dmr)
+head(top_nat_vs_sub_metal) 
+
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast

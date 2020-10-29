@@ -85,7 +85,7 @@ if ( !file.exists(ARRAY_SAMPLESHEET ) ) {
     DLFILE=paste(ARRAY_SAMPLESHEET,".gz",sep="")
     download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE79nnn/GSE79257/suppl/GSE79257_Illumina_samplesheet.csv.gz",
         destfile = DLFILE)
-    gunzip(DLFILE)
+    gunzip(DLFILE, overwrite = TRUE )
 }
 
 ARRAY_DATA="GSE79257/GSE79257_RAW.tar"
@@ -99,11 +99,8 @@ if ( !dir.exists("GSE79257/IDAT") ) {
 
 baseDir <- "GSE79257"
 targets <- read.metharray.sheet(baseDir)
-rgSet <- read.metharray.exp(targets = targets)
-rgSet
-targets$Basename <- gsub("GSE79257/IDAT/","",targets$Basename)
 head(targets)
-
+rgSet <- read.metharray.exp(targets = targets)
 ```
 
 
@@ -307,13 +304,17 @@ now exclude sex chromosomes from downstream analysis.
 In the comparison of NAT and FH samples there were ~150k probes with differential methylation
 (FDR<0.05), with ~120k loss of methylation and ~30k with increased methylation.
 
+
 ```{r,nat_vs_fh_incl, fig.width = 8 ,fig.height = 8}
 
 # include sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-table(groups)
+
+
+
 top_nat_vs_fh_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_nat_vs_fh_inc",
     myann=myann ,beta= beta)
@@ -324,22 +325,66 @@ top_nat_vs_fh_inc$comp
 top_nat_vs_fh_inc$cgi
 names(top_nat_vs_fh_inc)
 head(top_nat_vs_fh_inc$confects$table$name)
+
+
+
 ```
 
 ```{r,nat_vs_fh_excl, fig.width = 8 ,fig.height = 8}
 # exclude sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 groups <- factor(samplesheet$art,levels=c("NAT","FH"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-table(groups)
+
 top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh",
     myann=myann, beta=beta_flt)
 
 head(top_nat_vs_fh$dma)
-head(top_nat_vs_fh$dmr)
+ head(top_nat_vs_fh$dmr)
 top_nat_vs_fh$comp
 top_nat_vs_fh$cgi
+
+
+# Allele
+top_nat_vs_fh$dma$unmeth <- "T"
+top_nat_vs_fh$dma$meth <- "C"
+top_nat_vs_fh$fit$SE <- sqrt(top_nat_vs_fh$fit$s2.post) * top_nat_vs_fh$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_fh_metal <-top_nat_vs_fh$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_fh_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_fh$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsFH")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_fh$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsFH")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_fh_metal <- merge(top_nat_vs_fh_metal, fitCE)
+top_nat_vs_fh_metal <- merge(top_nat_vs_fh_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "NAT",]
+cases <- samplesheet[samplesheet$art == "FH",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_fh_metal$N <- Neff
+
+# Output for Meta-analysis
+dir.create("NATvsFH")
+write.table(top_nat_vs_fh_metal, file="NATvsFH/estill_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 
 ```
 
@@ -349,9 +394,11 @@ and ~37k with higher methylation.
 
 ```{r,nat_vs_fz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="FZ")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 groups <- factor(samplesheet$art,levels=c("NAT","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
-table(groups)
+
+
 top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz",
     myann=myann, beta=beta_flt)
@@ -360,6 +407,44 @@ head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
 top_nat_vs_fz$comp
 
+# Allele
+top_nat_vs_fz$dma$unmeth <- "T"
+top_nat_vs_fz$dma$meth <- "C"
+top_nat_vs_fz$fit$SE <- sqrt(top_nat_vs_fz$fit$s2.post) * top_nat_vs_fz$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_fz_metal <-top_nat_vs_fz$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_fh_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_fz$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsFZ")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_fz$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsFZ")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_fz_metal <- merge(top_nat_vs_fz_metal, fitCE)
+top_nat_vs_fz_metal <- merge(top_nat_vs_fz_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "NAT",]
+cases <- samplesheet[samplesheet$art == "FZ",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_fz_metal$N <- Neff
+head(top_nat_vs_fz_metal)
+# Output for Meta-analysis
+dir.create("NATvsFZ")
+write.table(top_nat_vs_fz_metal, file="NATvsFZ/estill_top_nat_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 ```
 
 ### NAT vs IUI
@@ -369,6 +454,7 @@ and ~36k with higher methylation.
 ```{r,nat_vs_iui, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="IUI")
 groups <- factor(samplesheet$art,levels=c("NAT","IUI"))
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 table(groups)
 top_nat_vs_iui <- dm_analysis(samplesheet=samplesheet,
@@ -379,6 +465,45 @@ head(top_nat_vs_iui$dma)
 head(top_nat_vs_iui$dmr)
 top_nat_vs_iui$comp
 
+# Allele
+top_nat_vs_iui$dma$unmeth <- "T"
+top_nat_vs_iui$dma$meth <- "C"
+top_nat_vs_iui$fit$SE <- sqrt(top_nat_vs_iui$fit$s2.post) * top_nat_vs_iui$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_iui_metal <-top_nat_vs_iui$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_iui_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_iui$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsIUI")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_iui$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsIUI")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_iui_metal <- merge(top_nat_vs_iui_metal, fitCE)
+top_nat_vs_iui_metal <- merge(top_nat_vs_iui_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "NAT",]
+cases <- samplesheet[samplesheet$art == "IUI",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_iui_metal$N <- Neff
+head(top_nat_vs_iui_metal)
+# Output for Meta-analysis
+dir.create("NATvsIUI")
+write.table(top_nat_vs_iui_metal, file="NATvsIUI/estill_top_nat_vs_iui_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
+
 ```
 
 ### FH vs FZ
@@ -388,6 +513,7 @@ half lower and higher. This suggests that freezing has only a small effect on me
 ```{r,fh_vs_fz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="FH" | art=="FZ")
 groups <- factor(samplesheet$art,levels=c("FH","FZ"))
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 table(groups)
 top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
@@ -397,6 +523,46 @@ top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
 head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
 top_fh_vs_fz$comp
+
+
+# Allele
+top_fh_vs_fz$dma$unmeth <- "T"
+top_fh_vs_fz$dma$meth <- "C"
+top_fh_vs_fz$fit$SE <- sqrt(top_fh_vs_fz$fit$s2.post) * top_fh_vs_fz$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_fh_vs_fz_metal <-top_fh_vs_fz$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_fh_vs_fz_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_fh_vs_fz$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsFZ")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_fh_vs_fz$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsFZ")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_fh_vs_fz_metal <- merge(top_fh_vs_fz_metal, fitCE)
+top_fh_vs_fz_metal <- merge(top_fh_vs_fz_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "FH",]
+cases <- samplesheet[samplesheet$art == "FZ",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+head(top_fh_vs_fz_metal)
+top_fh_vs_fz_metal$N <- Neff
+head(top_fh_vs_fz_metal)
+# Output for Meta-analysis
+
+write.table(top_fh_vs_fz_metal, file="misc/top_fh_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 ```
 
@@ -408,6 +574,7 @@ infant genome methylation.
 
 ```{r,nat_vs_fhfz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="NAT" | art=="FH" | art=="FZ")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("NAT","FX"))
@@ -420,7 +587,47 @@ top_nat_vs_fx <- dm_analysis(samplesheet=samplesheet,
 head(top_nat_vs_fx$dma)
 head(top_nat_vs_fx$dmr)
 top_nat_vs_fx$comp
+
+
+# Allele
+top_nat_vs_fx$dma$unmeth <- "T"
+top_nat_vs_fx$dma$meth <- "C"
+top_nat_vs_fx$fit$SE <- sqrt(top_nat_vs_fx$fit$s2.post) * top_nat_vs_fx$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_nat_vs_fx_metal <-top_nat_vs_fx$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_nat_vs_fx_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_nat_vs_fx$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsFX")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_nat_vs_fx$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsFX")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_nat_vs_fx_metal <- merge(top_nat_vs_fx_metal, fitCE)
+top_nat_vs_fx_metal <- merge(top_nat_vs_fx_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "NAT",]
+cases <- samplesheet[samplesheet$art == "FX",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_nat_vs_fx_metal$N <- Neff
+head(top_nat_vs_fx_metal)
+# Output for Meta-analysis
+write.table(top_nat_vs_fx_metal, file="NATvsICSI/estill_top_nat_vs_fx_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 ```
+
 
 ### IUI vs FH/FZ
 We know that IVF conceived infants have a major shift in genome methylation, but we don't know
@@ -434,6 +641,7 @@ or even the effect of hormone therapy.
 
 ```{r,iui_vs_fhfz, fig.width = 8 ,fig.height = 8}
 samplesheet <- subset(targets,art=="IUI" | art=="FH" | art=="FZ")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$art <- gsub("FH","FX",samplesheet$art)
 samplesheet$art <- gsub("FZ","FX",samplesheet$art)
 groups <- factor(samplesheet$art,levels=c("IUI","FX"))
@@ -446,6 +654,45 @@ top_iui_vs_fx <- dm_analysis(samplesheet=samplesheet,
 head(top_iui_vs_fx$dma)
 head(top_iui_vs_fx$dmr)
 top_iui_vs_fx$comp
+
+# Allele
+top_iui_vs_fx$dma$unmeth <- "T"
+top_iui_vs_fx$dma$meth <- "C"
+top_iui_vs_fx$fit$SE <- sqrt(top_iui_vs_fx$fit$s2.post) * top_iui_vs_fx$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_iui_vs_fx_metal <-top_iui_vs_fx$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_iui_vs_fx_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_iui_vs_fx$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsFX")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_iui_vs_fx$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsFX")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_iui_vs_fx_metal <- merge(top_iui_vs_fx_metal, fitCE)
+top_iui_vs_fx_metal <- merge(top_iui_vs_fx_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$art == "IUI",]
+cases <- samplesheet[samplesheet$art == "FX",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+head(top_iui_vs_fx_metal)
+top_iui_vs_fx_metal$N <- Neff
+head(top_iui_vs_fx_metal)
+# Output for Meta-analysis
+
+write.table(top_iui_vs_fx_metal, file="misc/top_iui_vs_fx_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast

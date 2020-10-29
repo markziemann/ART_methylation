@@ -1,0 +1,170 @@
+---
+title: "METAl meta-Analysis"
+author: "The methylation in ART meta-analysis group"
+date: "10/1/2020"
+output:   
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+# Introduction
+Here we run the possible meta analysis comparisons
+
+Match anno to probes
+DMRcate peak calling
+pvalue histogram
+volcano plot
+manhattan plot with split axis (split by z score) plot hypo hyper separately
+Effectsize Deltabeta
+Forrest Plot
+
+bumpHunter, DMRfinder, probelasso, mCSEA, DMRforPairs 
+
+
+```{r, install packages}
+
+source("meth_functions.R")
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("chr", "pos", "UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
+library(bumphunter)
+
+```
+
+MARKER = Row.names
+DEFAULT = N (Neff=4/(1/Ncases+1/Nctrls))
+ALLELE = unmeth meth
+FREQ = AveExpr
+EFFECT = CE
+STDERR = SE
+PVAL = P.Value
+
+
+
+# Natural vs ART
+Here we compare all data sets with by Natural vs ART, as all studies use different methods this is a general comparison.
+Estill
+Choufani
+Litzky
+Hajj
+```{bash, Natural vs ART} 
+
+metal NATvsART.txt
+
+```
+
+```{r, Natural vs ART, output}
+nat_vs_art <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_art <- nat_vs_art[order(nat_vs_art$P.value),]
+nat_vs_art$FDR <- p.adjust(nat_vs_art$P.value)
+
+
+nat_vs_art_a <- merge(nat_vs_art, myann, by.x = "MarkerName", by.y = 0)
+nat_vs_art_a <- nat_vs_art_a[order(nat_vs_art_a$P.value),]
+head(nat_vs_art_a, 20)
+
+#############################
+# Combp
+#############################
+
+#cpg.annotate(datatype = "array", object, 
+#             arraytype="450K", analysis.type = "differential", design, contrasts = FALSE, 
+#            fdr = 0.05, coef,) 
+
+nat_vs_art_combp <-nat_vs_art_a[,c("chr", "pos", "P.value", "MarkerName")]
+nat_vs_art_combp$V3 <- nat_vs_art_combp$pos
+nat_vs_art_combp <- nat_vs_art_combp[,c(1,2,5,3,4)]
+colnames(nat_vs_art_combp)<- c("V1","V2","V3","V4","V5")
+nat_vs_art_combp_filter <- nat_vs_art_combp[nat_vs_art_combp$V1 == "chr1",]
+
+str(nat_vs_art_combp_filter)
+
+#combp(nat_vs_art_combp_filter,dist.cutoff=1000,bin.size=310,seed=0.5,
+#            region_plot=TRUE,mht_plot=TRUE,nCores=10)
+
+#head(nat_vs_art_combp)
+
+################################
+#BumpHunter
+################################
+
+#cl <- cluster
+#design <- model.matrix(~ nat_vs_art_a)
+#bumps <- bumphunter(nat_vs_art_a, design = design, B=0, type="Beta", cutoff = 1000,   )
+
+
+hist(-log10(nat_vs_art_a$FDR))
+hist(-log10(nat_vs_art_a$P.value))
+hist(nat_vs_art_a$FDR)
+hist(nat_vs_art_a$P.value, main = "Histogram of P.values")
+
+volcano_metal(nat_vs_art_a, "Nat vs ART")
+
+
+nat_vs_art_a$chrnum <- as.integer(gsub("chr","", nat_vs_art_a$chr))
+
+
+manhattan(nat_vs_art_a, chr="chrnum", bp="pos", p="P.value")
+manhattan(nat_vs_art_a, chr="chrnum", bp="pos", p="FDR")
+
+
+hyper <- subset(nat_vs_art_a, Zscore > 0)
+hypo <- subset(nat_vs_art_a, Zscore < 0)
+
+manhattan(hyper, chr="chrnum", bp="pos", p="P.value", )
+manhattan(hypo, chr="chrnum", bp="pos", p="P.value")
+ 
+```
+
+# Natural vs ICSI 
+Estill
+Choufani
+Hajj
+
+```{bash, Natural vs ICSI}
+
+metal NATvsICSI.txt
+
+```
+
+```{r, Natural vs ICSI, output}
+nat_vs_icsi <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_icsi <- nat_vs_icsi[order(nat_vs_icsi$P.value),]
+head(nat_vs_icsi, 20)
+```
+
+
+# Natural vs Subfertility
+Two of the studies also listed subfertility as a parameter, here we compare the two studies.
+Choufani
+Litzky
+```{bash, Natural vs SUB}
+
+metal NATvsSUB.txt
+
+```
+
+```{r, Natural vs Sub, output}
+nat_vs_sub <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_sub <- nat_vs_sub[order(nat_vs_sub$P.value),]
+head(nat_vs_sub, 20)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+# Natural vs ART in Placenta
+Two of the studies have samples taken from placenta both of which when analysed individually have few-no significant probes, here we compare the two studies.
+Choufani
+Litzky
+```{bash, Natural vs ART in placenta}
+
+metal NATvsARTplacenta.txt
+
+```
+
+```{r, Natural vs ART placenta, output} 
+nat_vs_artp <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_artp <- nat_vs_artp[order(nat_vs_artp$P.value),]
+head(nat_vs_artp, 20)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
