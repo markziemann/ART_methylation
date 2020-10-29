@@ -153,6 +153,8 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
 myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
 head(top_nat_vs_fh$dmr,10)
+# Output for Meta-analysis
+write.table(top_nat_vs_fh$dma,file="novakovic_top_nat_vs_fh.tsv",sep="\t",quote=FALSE)
 ```
 
 ### non-ART Vs Frozen embryo
@@ -168,6 +170,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
 myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
 head(top_nat_vs_fz$dmr,10)
+write.table(top_nat_vs_fz$dma,file="novakovic_top_nat_vs_fz.tsv",sep="\t",quote=FALSE)
 ```
 
 ### non-ART Vs GIFT
@@ -183,6 +186,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
 myann=myann ,beta= betas)
 head(top_nat_vs_GIFT$dma,10)
 head(top_nat_vs_GIFT$dmr,10)
+write.table(top_nat_vs_GIFT$dma,file="novakovic_top_nat_vs_GIFT.tsv",sep="\t",quote=FALSE)
 ```
 
 ### non-ART Vs FX
@@ -201,6 +205,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
 myann=myann ,beta= betas)
 head(top_nat_vs_FX$dma,10)
 head(top_nat_vs_FX$dmr,10)
+write.table(top_nat_vs_FX$dma,file="novakovic_top_nat_vs_FX.tsv",sep="\t",quote=FALSE)
 ```
 
 
@@ -220,6 +225,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
 myann=myann ,beta= betas)
 head(top_GIFT_vs_FX$dma,10)
 head(top_GIFT_vs_FX$dmr,10)
+write.table(top_GIFT_vs_FX$dma,file="novakovic_top_GIFT_vs_FX.tsv",sep="\t",quote=FALSE)
 ```
 
 ### non-ART Vs ART
@@ -236,6 +242,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
 myann=myann ,beta= betas)
 head(top_nat_vs_ART$dma,10)
 head(top_nat_vs_ART$dmr,10)
+write.table(top_nat_vs_ART$dma,file="novakovic_top_nat_vs_ART.tsv",sep="\t",quote=FALSE)
 ```
 
 ### Fresh embryo Vs Frozen embryo
@@ -252,6 +259,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
 myann=myann ,beta= betas)
 head(top_fh_vs_fz$dma,10)
 head(top_fh_vs_fz$dmr,10)
+write.table(top_fh_vs_fz$dma,file="novakovic_top_fh_vs_fz.tsv",sep="\t",quote=FALSE)
 ```
 
 
