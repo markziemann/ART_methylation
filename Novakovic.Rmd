@@ -153,20 +153,6 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
 myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
 head(top_nat_vs_fh$dmr,10)
-```
-
-```{r,nat_vs_fh_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`fh:ch1`=="No" | `fh:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`fh:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_nat_vs_ivf_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fh_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_nat_vs_fh_exc$dma$unmeth <- "T"
@@ -210,7 +196,6 @@ write.table(top_nat_vs_fh_metal, file="NATvsFH/novakovic_top_nat_vs_fh_metal.tsv
 head(top_nat_vs_fh_exc$dma)
 head(top_nat_vs_fh_exc$dmr)
 head(top_nat_vs_fh_metal)
-
 ```
 
 
@@ -227,20 +212,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
 myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
 head(top_nat_vs_fz$dmr,10)
-```
 
-```{r,nat_vs_fz_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`fz:ch1`=="No" | `fz:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`fz:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_nat_vs_fz_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_nat_vs_fz_exc$dma$unmeth <- "T"
@@ -300,20 +272,6 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
 myann=myann ,beta= betas)
 head(top_nat_vs_GIFT$dma,10)
 head(top_nat_vs_GIFT$dmr,10)
-```
-
-```{r,nat_vs_GIFT_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`GIFT:ch1`=="No" | `GIFT:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`GIFT:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_nat_vs_GIFT_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_GIFT_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_nat_vs_GIFT_exc$dma$unmeth <- "T"
@@ -375,20 +333,7 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
 myann=myann ,beta= betas)
 head(top_nat_vs_FX$dma,10)
 head(top_nat_vs_FX$dmr,10)
-```
 
-```{r,nat_vs_FX_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`FX:ch1`=="No" | `FX:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`FX:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_nat_vs_FX_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_FX_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_nat_vs_FX_exc$dma$unmeth <- "T"
@@ -452,20 +397,7 @@ myann=myann ,beta= betas)
 head(top_GIFT_vs_FX$dma,10)
 head(top_GIFT_vs_FX$dmr,10)
 write.table(top_GIFT_vs_FX$dma,file="novakovic_top_GIFT_vs_FX.tsv",sep="\t",quote=FALSE)
-```
 
-```{r,GIFT_vs_FX_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`FX:ch1`=="No" | `FX:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`FX:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_GIFT_vs_FX_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_GIFT_vs_FX_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_GIFT_vs_FX_exc$dma$unmeth <- "T"
@@ -527,20 +459,7 @@ myann=myann ,beta= betas)
 head(top_nat_vs_ART$dma,10)
 head(top_nat_vs_ART$dmr,10)
 write.table(top_nat_vs_ART$dma,file="novakovic_top_nat_vs_ART.tsv",sep="\t",quote=FALSE)
-```
 
-```{r,nat_vs_ART_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`ART:ch1`=="No" | `ART:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`ART:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_nat_vs_ART_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_ART_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_nat_vs_ART_exc$dma$unmeth <- "T"
@@ -600,20 +519,6 @@ sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
 myann=myann ,beta= betas)
 head(top_fh_vs_fz$dma,10)
 head(top_fh_vs_fz$dmr,10)
-```
-
-```{r,fh_vs_fz_excl}
-# exclude sex chromosomes
-samplesheet <- subset(targets,`fz:ch1`=="No" | `fz:ch1`=="Yes")
-samplesheet <- subset(samplesheet, `infant gender:ch1`=="Male" | `infant gender:ch1`=="Female")
-samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
-
-groups <- factor(samplesheet$`fz:ch1`,levels=c("No","Yes"))
-sex <- factor(samplesheet$`infant gender:ch1`,levels=c("Male","Female"))
-
-top_fh_vs_fz_exc <- dm_analysis(samplesheet=samplesheet,
-    sex=sex,groups=groups,mx=Mval_flt,name="top_fh_vs_fz_exc",
-    myann=myann ,beta= beta)
 
 # Allele
 top_fh_vs_fz_exc$dma$unmeth <- "T"
