@@ -63,35 +63,6 @@ nat_vs_art_a <- merge(nat_vs_art, myann, by.x = "MarkerName", by.y = 0)
 nat_vs_art_a <- nat_vs_art_a[order(nat_vs_art_a$P.value),]
 head(nat_vs_art_a, 20)
 
-#############################
-# Combp
-#############################
-
-#cpg.annotate(datatype = "array", object, 
-#             arraytype="450K", analysis.type = "differential", design, contrasts = FALSE, 
-#            fdr = 0.05, coef,) 
-
-nat_vs_art_combp <-nat_vs_art_a[,c("chr", "pos", "P.value", "MarkerName")]
-nat_vs_art_combp$V3 <- nat_vs_art_combp$pos
-nat_vs_art_combp <- nat_vs_art_combp[,c(1,2,5,3,4)]
-colnames(nat_vs_art_combp)<- c("V1","V2","V3","V4","V5")
-nat_vs_art_combp_filter <- nat_vs_art_combp[nat_vs_art_combp$V1 == "chr1",]
-
-str(nat_vs_art_combp_filter)
-
-#combp(nat_vs_art_combp_filter,dist.cutoff=1000,bin.size=310,seed=0.5,
-#            region_plot=TRUE,mht_plot=TRUE,nCores=10)
-
-#head(nat_vs_art_combp)
-
-################################
-#BumpHunter
-################################
-
-#cl <- cluster
-#design <- model.matrix(~ nat_vs_art_a)
-#bumps <- bumphunter(nat_vs_art_a, design = design, B=0, type="Beta", cutoff = 1000,   )
-
 
 hist(-log10(nat_vs_art_a$FDR))
 hist(-log10(nat_vs_art_a$P.value))
@@ -113,6 +84,93 @@ hypo <- subset(nat_vs_art_a, Zscore < 0)
 
 manhattan(hyper, chr="chrnum", bp="pos", p="P.value", )
 manhattan(hypo, chr="chrnum", bp="pos", p="P.value")
+```
+
+```{r, DMR calling}
+# DMR
+nat_vs_art_a[order(nat_vs_art_a$chr),]
+res <- makeGRangesFromDataFrame(nat_vs_art_a, keep.extra.columns = TRUE, ignore.strand = TRUE, seqnames.field = "chr", start.field = "pos", end.field = "pos")
+res <- sortSeqlevels(res)
+res <- sort(res)
+head(res$P.value)
+resdf <- as.data.frame(res)
+
+temp <- as.vector(apply(resdf, 1, function(x){
+  if (x[11] > 0.05){y<-0}
+  else if (x[10]> 0){y<- 1}
+  else if (x[10]< 0){y<- -1}
+  y
+}))
+
+
+
+dim(temp)
+str(temp)
+head(temp)
+
+rolling <- rollmean(temp,k=3, fill = NA)
+resdf$temp <- temp
+resdf$rolling <- rolling
+resdf
+
+as.data.frame(resdf)[unname(which(rolling == 1)),]
+
+dim(as.data.frame(res))
+
+which(rolling == 1)   
+
+```
+
+
+```{r, Hyper}
+hyper <- as.data.frame(t(sapply(which(rolling == 1), function(x){
+  w=x-1
+  y=x+1
+  dmrstart <- start(res)[w]
+  dmrend <- start(res)[y]
+  chr <- seqnames(res)[y]
+  return(c(w, x, y, dmrstart, dmrend))
+})))
+
+
+hyper_chr <- sapply(which(rolling == 1), function(x){
+   chr <- seqnames(res)[x]
+   as.character(chr)
+})
+
+hyper$chr <- hyper_chr
+colnames(hyper)<- c("w", "x", "y", "start", "end", "chr")
+hyper
+
+hyperGR <- makeGRangesFromDataFrame(hyper, keep.extra.columns = TRUE, ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+hyperGR <- GenomicRanges::reduce(hyperGR)
+hyperGR
+hyper
+
+
+apply(as.data.frame(hyperGR), 1, function(x){
+ G <- GRanges(seqnames = x[1], ranges = IRanges(x[2]:x[3]))
+subsetByOverlaps(Granges, G)
+ })
+
+
+
+subsetByOverlaps(Granges, hyperGR)
+
+
+hypo <- sapply(which(rolling == -1), function(x){
+  w=x-1
+  y=x+1
+  dmrstart <- start(Granges)[w]
+  dmrend <- start(Granges)[y]
+  chr <- seqnames(Granges)[y]
+  return(c(w, x, y, chr, dmrstart, dmrend))
+})
+
+hypo
+
+
+
  
 ```
 
