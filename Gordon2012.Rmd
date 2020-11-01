@@ -207,3 +207,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+## Session Information
+
+```{r,session}
+
+sessionInfo()
+
+```
+

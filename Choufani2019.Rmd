@@ -959,3 +959,11 @@ head(top_ICSI_vs_IUI_mitch,50)
 #        type = c("output", "message"), split = FALSE)
 
 #```
+
+## Session Information
+
+```{r,session}
+
+sessionInfo()
+
+```

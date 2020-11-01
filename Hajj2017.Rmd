@@ -323,3 +323,12 @@ head(top_nat_vs_icsi_exc_mitch,50)
 
 
 ## References
+
+## Session Information
+
+```{r,session}
+
+sessionInfo()
+
+```
+
