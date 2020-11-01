@@ -40,7 +40,7 @@ if(!dir.exists("IDAT")){
 download.file("https://ftp.ncbi.nlm.nih.gov/geo/series/GSE131nnn/GSE131433/matrix/GSE131433_series_matrix.txt.gz", 
   destfile=SERIES_MATRIX)
 
-gse <- getGEO(filename="/mnt/mkasu/projects/ART_methylation/GSE1311433_series_matrix.txt.gz")
+gse <- getGEO(filename="GSE1311433_series_matrix.txt.gz")
 
 baseDir <- "."
 sample_metadata <- pData(phenoData(gse))
