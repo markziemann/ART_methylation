@@ -1,0 +1,270 @@
+---
+title: "METAl meta-Analysis"
+author: "The methylation in ART meta-analysis group"
+date: "10/1/2020"
+output:   
+  html_document:
+    toc: true
+theme: cosmo
+---
+
+# Introduction
+Here we run the possible meta analysis comparisons
+
+Match anno to probes
+DMRcate peak calling
+pvalue histogram
+volcano plot
+manhattan plot with split axis (split by z score) plot hypo hyper separately
+Effectsize Deltabeta
+Forrest Plot
+
+bumpHunter, DMRfinder, probelasso, mCSEA, DMRforPairs 
+
+
+```{r, install packages}
+
+source("meth_functions.R")
+ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+myann <- data.frame(ann450k[,c("chr", "pos", "UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
+library(bumphunter)
+library(zoo)
+
+```
+
+MARKER = Row.names
+DEFAULT = N (Neff=4/(1/Ncases+1/Nctrls))
+ALLELE = unmeth meth
+FREQ = AveExpr
+EFFECT = CE
+STDERR = SE
+PVAL = P.Value
+
+
+# DMR Caller
+
+```{r, DMR caller}
+
+# K=number of probes in rolling average
+# RAT=rolling average threshold
+# data=limma result. do not filter any probes based on p-values
+dmrcaller <- function(data,K,RAT){
+  res <- data
+  res <- makeGRangesFromDataFrame(res, keep.extra.columns = TRUE, ignore.strand = TRUE,
+    seqnames.field = "chr", start.field = "pos", end.field = "pos")
+  res <- sortSeqlevels(res)
+  res <- sort(res)
+  resdf <- as.data.frame(res)
+  temp <- as.vector(apply(resdf, 1, function(x){
+    if (as.numeric(x[11]) > 0.05){ y <- 0 }
+    else if (as.numeric(x[10])> 0){ y<- 1 }
+    else if (as.numeric(x[10])< 0){ y<- -1 }
+    y
+  }))
+  rolling <- rollmean(temp,k=K, fill = NA)
+  resdf$temp <- temp
+  resdf$rolling <- rolling
+  # hyer
+  hyper <- as.data.frame(t(sapply(which(rolling >= RAT), function(x){
+    w=x-1
+    y=x+1
+    dmrstart <- start(res)[w]
+    dmrend <- start(res)[y]
+    chr <- seqnames(res)[y]
+    return(c(w, x, y, dmrstart, dmrend))
+  })))
+  hyper_chr <- sapply(which(rolling >= RAT), function(x){
+    chr <- seqnames(res)[x]
+    as.character(chr)
+  })
+  hyper$chr <- hyper_chr
+  colnames(hyper)<- c("w", "x", "y", "start", "end", "chr")
+  hyperGR <- makeGRangesFromDataFrame(hyper, keep.extra.columns = TRUE,
+    ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+  hyperGR <- GenomicRanges::reduce(hyperGR)
+  # extract the probes that overlap each DMR
+  hyperOL <- apply(as.data.frame(hyperGR), 1, function(x){
+    G <- GRanges(seqnames = x[1], ranges = IRanges(x[2]:x[3]))
+    subsetByOverlaps(res, G)
+  })
+  # from metaRNA-seq CRAN pkg
+  fishercomb <- function(indpval) {
+    logpval=do.call(cbind,lapply(indpval, log))
+    statc=apply(logpval,1, FUN=function(x) -2*sum(x,na.rm=TRUE))
+    na.index <- which(apply(logpval, 1, function(x) sum(is.na(x))) == ncol(logpval))
+    statc[na.index] <- NA
+    notNA=apply(logpval,1,FUN=function(x) sum(!(is.na(x))))
+    rpvalc = 1 - pchisq(statc, df=(2*notNA))
+    return(rpvalc)
+  }
+  # obtain summary info for each hyper DMR
+  hyperdmr <- lapply(hyperOL,function(x) {
+    df <- as.data.frame(x)
+    n <- nrow(df)
+    z <- mean(df$Zscore)
+    fp <- fishercomb(df$P.value)
+    chr <- df[1,1]
+    start <- df[1,2]
+    end <- df[nrow(df),2]
+    data.frame("chr"=chr,"start"=start,"end"=end,"no. probes"=n,"meanZ"=z,"FisherP"=fp)
+  })
+  hyperdmr <- do.call(rbind, hyperdmr)
+  # hypo
+  hypo <- as.data.frame(t(sapply(which(rolling <= -RAT), function(x){
+    w=x-1
+    y=x+1
+    dmrstart <- start(res)[w]
+    dmrend <- start(res)[y]
+    chr <- seqnames(res)[y]
+    return(c(w, x, y, dmrstart, dmrend))
+  })))
+  hypo_chr <- sapply(which(rolling <= -RAT), function(x){
+    chr <- seqnames(res)[x]
+    as.character(chr)
+  })
+  hypo$chr <- hypo_chr
+  colnames(hypo)<- c("w", "x", "y", "start", "end", "chr")
+  hypoGR <- makeGRangesFromDataFrame(hypo, keep.extra.columns = TRUE,
+    ignore.strand = TRUE, seqnames.field = "chr", start.field = "start", end.field = "end")
+  hypoGR <- GenomicRanges::reduce(hypoGR)
+  # extract the probes that overlap each DMR
+  hypoOL <- apply(as.data.frame(hypoGR), 1, function(x){
+    G <- GRanges(seqnames = x[1], ranges = IRanges(x[2]:x[3]))
+    subsetByOverlaps(res, G)
+  })
+  # obtain summary info for each hypo DMR
+  hypodmr <- lapply(hypoOL,function(x) {
+    df <- as.data.frame(x)
+    n <- nrow(df)
+    z <- mean(df$Zscore)
+    fp <- fishercomb(df$P.value)
+    chr <- df[1,1]
+    start <- df[1,2]
+    end <- df[nrow(df),2]
+    data.frame("chr"=chr,"start"=start,"end"=end,"no. probes"=n,"meanZ"=z,"FisherP"=fp)
+  })
+  hypodmr <- do.call(rbind, hypodmr)
+
+  list("HyperDMRs"=hyperdmr,"HypoDMRs"=hypodmr,"hyper overlap"=hyperOL,"hypo overlap"=hypoOL)
+}
+
+```
+
+
+
+# Natural vs ART
+
+Here we compare all data sets with by Natural vs ART, as all studies use different methods this is a 
+general comparison.
+Estill
+Choufani
+Litzky
+Hajj
+
+```{bash, Natural vs ART} 
+
+metal NATvsART.txt
+
+```
+
+```{r, Natural vs ART, output}
+
+nat_vs_art <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_art <- nat_vs_art[order(nat_vs_art$P.value),]
+nat_vs_art$FDR <- p.adjust(nat_vs_art$P.value)
+
+nat_vs_art_a <- merge(nat_vs_art, myann, by.x = "MarkerName", by.y = 0)
+nat_vs_art_a <- nat_vs_art_a[order(nat_vs_art_a$P.value),]
+head(nat_vs_art_a, 20)
+
+hist(-log10(nat_vs_art_a$FDR))
+hist(-log10(nat_vs_art_a$P.value))
+hist(nat_vs_art_a$FDR)
+hist(nat_vs_art_a$P.value, main = "Histogram of P.values")
+
+volcano_metal(nat_vs_art_a, "Nat vs ART")
+
+nat_vs_art_a$chrnum <- as.integer(gsub("chr","", nat_vs_art_a$chr))
+
+manhattan(nat_vs_art_a, chr="chrnum", bp="pos", p="P.value")
+manhattan(nat_vs_art_a, chr="chrnum", bp="pos", p="FDR")
+
+hyper <- subset(nat_vs_art_a, Zscore > 0)
+hypo <- subset(nat_vs_art_a, Zscore < 0)
+
+manhattan(hyper, chr="chrnum", bp="pos", p="P.value", )
+manhattan(hypo, chr="chrnum", bp="pos", p="P.value")
+
+```
+
+```{r,dmrcalling}
+
+# testing on chr22
+#data1 <- nat_vs_art_a[which(nat_vs_art_a$chr=="chr22"),]
+#system.time(dmrres <- dmrcaller(data=data1,K=5,RAT=0.7))
+
+system.time(dmrres <- dmrcaller(data=nat_vs_art_a,K=5,RAT=0.7))
+
+names(dmrres)
+hyper <- dmrres$HyperDMRs
+nrow(hyper)
+head( hyper[order(hyper$FisherP),] ,20 )
+hypo <- dmrres$HypoDMRs
+nrow(hypo)
+head( hypo[order(hypo$FisherP),] ,20 )
+
+
+```
+
+# Natural vs ICSI 
+Estill
+Choufani
+Hajj
+
+```{bash, Natural vs ICSI}
+
+metal NATvsICSI.txt
+
+```
+
+```{r, Natural vs ICSI, output}
+nat_vs_icsi <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_icsi <- nat_vs_icsi[order(nat_vs_icsi$P.value),]
+head(nat_vs_icsi, 20)
+```
+
+
+# Natural vs Subfertility
+Two of the studies also listed subfertility as a parameter, here we compare the two studies.
+Choufani
+Litzky
+```{bash, Natural vs SUB}
+
+metal NATvsSUB.txt
+
+```
+
+```{r, Natural vs Sub, output}
+nat_vs_sub <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_sub <- nat_vs_sub[order(nat_vs_sub$P.value),]
+head(nat_vs_sub, 20)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+# Natural vs ART in Placenta
+Two of the studies have samples taken from placenta both of which when analysed individually have few-no significant probes, here we compare the two studies.
+Choufani
+Litzky
+```{bash, Natural vs ART in placenta}
+
+metal NATvsARTplacenta.txt
+
+```
+
+```{r, Natural vs ART placenta, output} 
+nat_vs_artp <- read.table("METAANALYSIS1.TBL", header = TRUE)
+nat_vs_artp <- nat_vs_artp[order(nat_vs_artp$P.value),]
+head(nat_vs_artp, 20)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

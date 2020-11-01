@@ -21,44 +21,21 @@ The platform used in the study is the Illumina Infinium HumanMethylation450k Bea
 The methylation data have been deposited to NCBI GEO repository accession number 
 [GSE120250](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE120250).
 
-# Loading packages
+# Loading packages and functions
 These packackes will help us to perform vital steps such as normalisation, filtering, 
 differential analysis, etc, and provide information about the array probe annotaions.
 
+These functions provide shortcuts to help with charts and other analysis. They are 
+now available in the separate document "meth_functions.R"
+
 ```{r,packages}
-suppressPackageStartupMessages({
-    library("R.utils")
-    library("missMethyl")
-    library("limma")
-    library("topconfects")
-    library("minfi")
-    library("IlluminaHumanMethylation450kmanifest")
-    library("MethylToSNP")
-    library("RColorBrewer")
-    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
-    library("eulerr")
-    library("plyr")
-    library("gplots")
-    library("reshape2")
-    library("beeswarm")
-    library("GEOquery")
-    library("readxl")
-    
-  })
+source("meth_functions.R")
 # Annotation
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 ```
 
-
-# Loading functions
-
-These functions provide shortcuts to help with charts and other analysis. They are now available in the separate document "meth_functions.R"
-
-```{r,load_functions}
-source("meth_functions.R")
-```
 
 # Data Import
 Importing Data from GEO.
@@ -97,10 +74,7 @@ targets <- pData(phenoData(gse))
 #Include Extra Metadata
 extrameta <- read.table("ARTdetails.tsv", sep = "\t", header = TRUE)
 extrameta <- extrameta[,c("title","Details.ART")]
-
-
 targets <- merge(extrameta, targets)
-
 rownames(targets) <- targets$geo_accession
 
 #Reorder dataframe
@@ -114,10 +88,10 @@ rgSet <- read.metharray.exp(targets = targets)
 
 
 
-
+# Data Normalisation
 ```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
 mSet <- preprocessRaw(rgSet)
-mSetSw <- SWAN(mSet,verbose=FALSE)
+mSetSw <- SWAN(mSet,verbose=FALSE) 
 par(mfrow=c(1,2))
 densityByProbeType(mSet[,1], main = "Raw")
 densityByProbeType(mSetSw[,1], main = "SWAN")
@@ -211,8 +185,8 @@ colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets$Details.ART))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-mydist <- plotMDS(Mval, labels=rownames(targets),col=colours,main="sex chromosomes included")
-mydist_flt <- plotMDS(Mval_flt, labels=rownames(targets),col=colours,main="sex chromosomes excluded")
+plotMDS(mydist, labels=rownames(targets),col=colours,main="sex chromosomes included")
+plotMDS(mydist_flt, labels=rownames(targets) ,col=colours,main="sex chromosomes excluded")
 
 ```
 
@@ -247,23 +221,23 @@ plotMDS(mydist_flt, labels=rownames(targets), col=colours,main="sex chromosomes 
 
 There are a few differential contrasts that would be of interest to us in this study:
 
-* __NAT vs in vitro__: 
+* __NAT(40) vs in vivo(15)__: 
 
-* __NAT vs in vivo__: .
+* __NAT(40) vs in vitro(18) __: .
 
-* __NAT vs ART__:
+* __NAT(40) vs ART(33)__:
 
-* __in vivo vs in vitro__: 
+* __in vivo(15) vs in vitro(18)__: 
 
-* __NAT vs ICSI__: 
+* __NAT(40) vs ICSI(14)__: 
 
-* __NAT vs IUI__:
+* __NAT(40) vs IUI(9)__:
 
-* __ICSI vs IUI__: 
+* __ICSI(14) vs IUI(9)__: 
 
 * __NAT vs IVF__: 
 
-* __NAT vs HYPO__:
+* __NAT(40) vs HYPO(6)__:
 
 The differential analysis is centred around limma to identify differentially methylated probes. 
 TopConfects was also run to obtain the probes with the largest confident effect (topconfect).
@@ -282,7 +256,8 @@ Potentially Remove in vitro and in vivo comparisons
 5. Heatmap (top probes by topconfect ranking). (TODO)
 
 ## Nat vs In vivo
-```{r,nat_vs_in_vivo_incl,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6: Differential analysis: Naturally conceived vs in vivo including sex chromosomes"}
+
+{r,nat_vs_in_vivo_incl,fig.width = 8 ,fig.height = 8, fig.cap="Figure 6: Differential analysis: Naturally conceived vs in vivo including sex chromosomes"}
 
 # Include Sex Chromosomes
 samplesheet <- subset(targets,`art treatment:ch1`=="NA" | `art treatment:ch1`=="in vivo")
@@ -296,8 +271,9 @@ top_NA_vs_invivo_inc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval,name="top_NA_vs_invivo_inc",
     myann=myann ,beta= beta)
 
-head(top_NA_vs_invivo_inc$dma)
-```
+
+
+
 
 ```{r,nat_vs_in_vivo_exc, fig.width = 8 , fig.height = 8, fig.cap="Figure 7: Differential analysis: Naturally conceived vs in vivo excluding sex chromosomes"}
 # Exclude Sex Chromosomes
@@ -311,8 +287,55 @@ sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 top_NA_vs_invivo_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invivo_exc",
     myann=myann ,beta= beta)
+
+
+# Allele
+top_NA_vs_invivo_exc$dma$unmeth <- "T"
+top_NA_vs_invivo_exc$dma$meth <- "C"
+top_NA_vs_invivo_exc$fit$SE <- sqrt(top_NA_vs_invivo_exc$fit$s2.post) * top_NA_vs_invivo_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_NA_vs_invivo_metal <-top_NA_vs_invivo_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_NA_vs_invivo_exc_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_NA_vs_invivo_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsin vivo")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_NA_vs_invivo_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsin vivo")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_NA_vs_invivo_metal <- merge(top_NA_vs_invivo_exc_metal, fitCE)
+top_NA_vs_invivo_exc_metal <- merge(top_NA_vs_invivo_exc_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$`art treatment:ch1` == "NA",]
+cases <- samplesheet[samplesheet$`art treatment:ch1` == "in vivo",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+top_NA_vs_invivo_metal$N <- Neff
+
+
+# Outputs for html
+head(top_NA_vs_invivo_metal)
 head(top_NA_vs_invivo_exc$dma)
-head(top_NA_vs_invivo_exc$dmr)
+#head(top_NA_vs_invivo__exc$dmr)
+#top_NA_vs_invivo_exc$comp
+#top_NA_vs_invivo_exc$cgi
+#names(top_NA_vs_invivo_exc)
+head(top_NA_vs_invivo_exc$confects$table$name)
+
+# Output for Meta-analysis
+dir.create("misc")
+write.table(top_NA_vs_invivo_metal,file="misc/choufani_top_NA_vs_invivo_exc.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 ## Nat vs In vitro
@@ -330,8 +353,53 @@ top_NA_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NA_vs_invitro_exc",
     myann=myann ,beta= beta)
 
+# Allele
+top_NA_vs_invitro_exc$dma$unmeth <- "T"
+top_NA_vs_invitro_exc$dma$meth <- "C"
+top_NA_vs_invitro_exc$fit$SE <- sqrt(top_NA_vs_invitro_exc$fit$s2.post) * top_NA_vs_invitro_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_NA_vs_invitro_metal <-top_NA_vs_invitro_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_NA_vs_invitro_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_NA_vs_invitro_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsin vitro")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_NA_vs_invitro_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsin vitro")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_NA_vs_invitro_metal <- merge(top_NA_vs_invitro_metal, fitCE)
+top_NA_vs_invitro_metal <- merge(top_NA_vs_invitro_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$`art treatment:ch1` == "NA",]
+cases <- samplesheet[samplesheet$`art treatment:ch1` == "in vitro",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+top_NA_vs_invivo_metal$N <- Neff
+
+
+# Outputs for html
+head(top_NA_vs_invitro_metal)
 head(top_NA_vs_invitro_exc$dma)
-head(top_NA_vs_invitro_exc$dmr)
+#head(top_NA_vs_invitro__exc$dmr)
+#top_NA_vs_invitro_exc$comp
+#top_NA_vs_invitro_exc$cgi
+#names(top_NA_vs_invitro_exc)
+head(top_NA_vs_invitro_exc$confects$table$name)
+
+# Output for Meta-analysis
+dir.create("misc")
+write.table(top_NA_vs_invitro_metal, file="misc/choufani_top_NA_vs_invitro.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 ## Nat vs ART
@@ -345,7 +413,7 @@ samplesheet$title <- (sapply(strsplit(samplesheet$title, "_"), "[[", 1))
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
 
-groups <- factor(samplesheet$title,levels=c("ART","Control"))
+groups <- factor(samplesheet$title,levels=c("Control","ART"))
 sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
 
 top_ART_vs_Control_exc <- dm_analysis(samplesheet=samplesheet,
@@ -354,6 +422,48 @@ top_ART_vs_Control_exc <- dm_analysis(samplesheet=samplesheet,
 
 head(top_ART_vs_Control_exc$dma)
 head(top_ART_vs_Control_exc$dma)
+
+# Allele
+top_ART_vs_Control_exc$dma$unmeth <- "T"
+top_ART_vs_Control_exc$dma$meth <- "C"
+top_ART_vs_Control_exc$fit$SE <- sqrt(top_ART_vs_Control_exc$fit$s2.post) * top_ART_vs_Control_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_ART_vs_Control_metal <-top_ART_vs_Control_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_ART_vs_Control_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_ART_vs_Control_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsART")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_ART_vs_Control_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsART")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_ART_vs_Control_metal <- merge(top_ART_vs_Control_metal, fitCE)
+top_ART_vs_Control_metal <- merge(top_ART_vs_Control_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$title == "Control",]
+cases <- samplesheet[samplesheet$Details.ART == "ART",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_ART_vs_Control_metal$N <- Neff
+
+head(top_ART_vs_Control_metal)
+
+# Output for Meta-analysis
+dir.create("NATvsART")
+
+write.table(top_ART_vs_Control_metal,file="NATvsART/choufani_top_ART_vs_Control.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 ## in vitro vs in vivo
@@ -372,11 +482,58 @@ top_invivo_vs_invitro_exc <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_invivo_vs_invitro_exc",
     myann=myann ,beta= beta)
 
-head(top_invivo_vs_invitro_exc$dma)
-head(top_invivo_vs_invitro_exc$dmr)
-```
-## Natural vs ICSI
 
+# Allele
+top_invivo_vs_invitro_exc$dma$unmeth <- "T"
+top_invivo_vs_invitro_exc$dma$meth <- "C"
+top_invivo_vs_invitro_exc$fit$SE <- sqrt(top_invivo_vs_invitro_exc$fit$s2.post) * top_invivo_vs_invitro_exc$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_invivo_vs_invitro_metal <-top_invivo_vs_invitro_exc$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_invivo_vs_invitro_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_invivo_vs_invitro_exc$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsin vitro")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_invivo_vs_invitro_exc$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsin vitro")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_invivo_vs_invitro_metal <- merge(top_invivo_vs_invitro_metal, fitCE)
+top_invivo_vs_invitro_metal <- merge(top_invivo_vs_invitro_metal, fitSE)
+
+# Number of effective participants
+controlss <- samplesheet[samplesheet$`art treatment:ch1` == "in vivo",]
+cases <- samplesheet[samplesheet$`art treatment:ch1` == "in vitro",]
+ctrl <- nrow(controlss)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+top_invivo_vs_invitro_metal$N <- Neff
+
+
+# Outputs for html
+head(top_invivo_vs_invitro_metal)
+head(top_invivo_vs_invitro_exc$dma)
+#head(top_NA_vs_invivo__exc$dmr)
+#top_NA_vs_invivo_exc$comp
+#top_NA_vs_invivo_exc$cgi
+#names(top_NA_vs_invivo_exc)
+head(top_invivo_vs_invitro_exc$confects$table$name)
+
+# Output for Meta-analysis
+dir.create("misc")
+write.table(top_invivo_vs_invitro_metal,file="misc/choufani_top_invivo_vs_invitro.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+
+```
+
+## Natural vs ICSI
 ```{r,NA_vs_ICSI, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Naturally conceived vs ICSI excluding sex chromosomes"}
 # Exclude Sex Chromosomes
 samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="ICSI")
@@ -390,10 +547,52 @@ top_NAT_vs_ICSI <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_ICSI",
     myann=myann ,beta= beta)
 
+# Allele
+top_NAT_vs_ICSI$dma$unmeth <- "T"
+top_NAT_vs_ICSI$dma$meth <- "C"
+top_NAT_vs_ICSI$fit$SE <- sqrt(top_NAT_vs_ICSI$fit$s2.post) * top_NAT_vs_ICSI$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_NAT_vs_ICSI_metal <-top_NAT_vs_ICSI$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_NAT_vs_ICSI_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_NAT_vs_ICSI$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsICSI")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_NAT_vs_ICSI$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsICSI")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_NAT_vs_ICSI_metal <- merge(top_NAT_vs_ICSI_metal, fitCE)
+top_NAT_vs_ICSI_metal <- merge(top_NAT_vs_ICSI_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$Details.ART == "NAT",]
+cases <- samplesheet[samplesheet$Details.ART == "ICSI",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_NAT_vs_ICSI_metal$N <- Neff
+
+
+
+
+
 head(top_NAT_vs_ICSI$dma)
 head(top_NAT_vs_ICSI$dmr)
+head(top_NAT_vs_ICSI_metal)
 
-
+# Output for Meta-analysis
+dir.create("NATvsICSI")
+write.table(top_NAT_vs_ICSI_metal, file="NATvsICSI/choufani_top_nat_vs_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 
@@ -411,9 +610,52 @@ top_NAT_vs_IUI <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_NAT_vs_IUI",
     myann=myann ,beta= beta)
 
+# Allele
+top_NAT_vs_IUI$dma$unmeth <- "T"
+top_NAT_vs_IUI$dma$meth <- "C"
+top_NAT_vs_IUI$fit$SE <- sqrt(top_NAT_vs_IUI$fit$s2.post) * top_NAT_vs_IUI$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_NAT_vs_IUI_metal <-top_NAT_vs_IUI$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_NAT_vs_IUI_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_NAT_vs_IUI$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsIUI")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_NAT_vs_IUI$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsIUI")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_NAT_vs_IUI_metal <- merge(top_NAT_vs_IUI_metal, fitCE)
+top_NAT_vs_IUI_metal <- merge(top_NAT_vs_IUI_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$Details.ART == "NAT",]
+cases <- samplesheet[samplesheet$Details.ART == "IUI",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_NAT_vs_IUI_metal$N <- Neff
+
+
+
+
+
 head(top_NAT_vs_IUI$dma)
 head(top_NAT_vs_IUI$dmr)
+head(top_NAT_vs_IUI_metal)
 
+# Output for Meta-analysis
+dir.create("NATvsIUI")
+write.table(top_NAT_vs_IUI_metal, file="NATvsIUI/choufani_top_nat_vs_IUI_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
 ```
 
 ## ICSI vs IUI
@@ -430,12 +672,61 @@ top_ICSI_vs_IUI <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_ICSI_vs_IUI",
     myann=myann ,beta= beta)
 
+# Allele
+top_ICSI_vs_IUI$dma$unmeth <- "T"
+top_ICSI_vs_IUI$dma$meth <- "C"
+top_ICSI_vs_IUI$fit$SE <- sqrt(top_ICSI_vs_IUI$fit$s2.post) * top_ICSI_vs_IUI$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_ICSI_vs_IUI_metal <-top_ICSI_vs_IUI$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_ICSI_vs_IUI_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_ICSI_vs_IUI$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsIUI")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_ICSI_vs_IUI$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsIUI")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_ICSI_vs_IUI_metal <- merge(top_ICSI_vs_IUI_metal, fitCE)
+top_ICSI_vs_IUI_metal <- merge(top_ICSI_vs_IUI_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$Details.ART == "ICSI",]
+cases <- samplesheet[samplesheet$Details.ART == "IUI",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_ICSI_vs_IUI_metal$N <- Neff
+
+
+
+
+
 head(top_ICSI_vs_IUI$dma)
 head(top_ICSI_vs_IUI$dmr)
+head(top_ICSI_vs_IUI_metal)
+
+# Output for Meta-analysis
+write.table(top_NAT_vs_IUI_metal, file="NATvsICSI/choufani_top_nat_vs_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+
+head(top_ICSI_vs_IUI$dma)
+head(top_ICSI_vs_IUI$dmr)
+
+# Output for Meta-analysis
+write.table(top_ICSI_vs_IUI_metal, file="misc/choufani_top_ICSI_vs_IUI.tsv",sep="\t",quote=FALSE) 
 ```
 
 ## NAT vs HYPO
-```{r,Nat_vs_Hypo_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 9: Differential analysis: Natural vs Hypofertile, excluding sex chromosomes"}
+```{r,Nat_vs_Hypo_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 10: Differential analysis: Natural vs Hypofertile, excluding sex chromosomes"}
 #Exclude Sex Chromosomes
 samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="Hypofertile")
 samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
@@ -448,9 +739,115 @@ top_na_vs_hypo <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_na_vs_hypo",
     myann=myann ,beta= beta)
 
+# Allele
+top_na_vs_hypo$dma$unmeth <- "T"
+top_na_vs_hypo$dma$meth <- "C"
+top_na_vs_hypo$fit$SE <- sqrt(top_na_vs_hypo$fit$s2.post) * top_na_vs_hypo$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_na_vs_hypo_metal <-top_na_vs_hypo$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_na_vs_hypo_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_na_vs_hypo$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsHypofertile")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_na_vs_hypo$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsHypofertile")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_na_vs_hypo_metal <- merge(top_na_vs_hypo_metal, fitCE)
+top_na_vs_hypo_metal <- merge(top_na_vs_hypo_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$Details.ART == "NAT",]
+cases <- samplesheet[samplesheet$Details.ART == "Hypofertile",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_na_vs_hypo_metal$N <- Neff
+
+
+
+
+
 head(top_na_vs_hypo$dma)
 head(top_na_vs_hypo$dmr)
+head(top_na_vs_hypo_metal)
+
+# Output for Meta-analysis
+dir.create("NATvsHypo")
+write.table(top_na_vs_hypo_metal, file="NATvsHypo/choufani_top_na_vs_hypo.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 ```
+## NAT vs IVF
+```{r,Nat_vs_IVF_exc, fig.width = 8 ,fig.height = 8, fig.cap="Figure 10: Differential analysis: Natural vs IVF, excluding sex chromosomes"}
+#Exclude Sex Chromosomes
+samplesheet <- subset(targets, `Details.ART`=="NAT" | `Details.ART`=="IVF")
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
+samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "_"), "[[", 1)
+
+groups <- factor(samplesheet$Details.ART,levels=c("NAT","IVF"))
+sex <- factor(samplesheet$`gender:ch1`,levels=c("M","F"))
+
+top_na_vs_ivf <- dm_analysis(samplesheet=samplesheet,
+    sex=sex,groups=groups,mx=Mval_flt,name="top_na_vs_ivf",
+    myann=myann ,beta= beta)
+
+# Allele
+top_na_vs_ivf$dma$unmeth <- "T"
+top_na_vs_ivf$dma$meth <- "C"
+top_na_vs_ivf$fit$SE <- sqrt(top_na_vs_ivf$fit$s2.post) * top_na_vs_ivf$fit$stdev.unscaled
+
+
+# Extract required columns from dma
+top_na_vs_ivf_metal <-top_na_vs_ivf$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
+head(top_na_vs_ivf_metal)
+
+# Convert fit outputs to dataframes
+fitCE <- as.data.frame(top_na_vs_ivf$fit$coefficients)
+fitCE$Row.names <- row.names(fitCE)
+fitCE <- fitCE[,c("Row.names", "groupsIVF")]
+names(fitCE)[2]<- "coefficient"
+
+
+fitSE <- as.data.frame(top_na_vs_ivf$fit$SE)
+fitSE$Row.names <- row.names(fitSE)
+fitSE <- fitSE[,c("Row.names", "groupsIVF")]
+names(fitSE)[2]<- "SE"
+
+# Merge Datasets
+top_na_vs_ivf_metal <- merge(top_na_vs_ivf_metal, fitCE)
+top_na_vs_ivf_metal <- merge(top_na_vs_ivf_metal, fitSE)
+
+# Number of effective participants
+controls <- samplesheet[samplesheet$Details.ART == "NAT",]
+cases <- samplesheet[samplesheet$Details.ART == "IVF",]
+ctrl <- nrow(controls)
+cses <- nrow(cases)
+Neff <- 4/((1/cses)+(1/ctrl))
+
+top_na_vs_ivf$N <- Neff
+
+
+
+
+
+head(top_na_vs_ivf$dma)
+head(top_na_vs_ivf$dmr)
+head(top_na_vs_ivf_metal)
+
+# Output for Meta-analysis
+dir.create("NATvsIVF")
+write.table(top_na_vs_ivf_metal, file="NATvsIVF/choufani_top_na_vs_ivf.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+```
+
 
 # Venn diagrams of the differential methylated probes for each contrast
 First, we look at the similarity of DMPs altered between in vivo and in vitro. 

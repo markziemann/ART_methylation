@@ -18,6 +18,8 @@ suppressPackageStartupMessages({
   library("forestplot")
   library("beeswarm")
   library("RCircos")
+  library("qqman")
+  library("ENmix")
 })
 
 
@@ -45,6 +47,20 @@ make_volcano <- function(dm,name,mx) {
     mtext(HEADER)
     grid()
     points(sig$logFC,-log10(sig$P.Val),cex=0.5,pch=19,col="red")
+}
+
+# Metal volcano
+volcano_metal <- function(metal,name) {
+  sig <- subset(metal,FDR<0.05)
+  N_SIG=nrow(sig)
+  N_UP=nrow(subset(sig,Zscore>0))
+  N_DN=nrow(subset(sig,Zscore<0))
+  HEADER=paste(N_SIG,"@5%FDR,", N_UP, "up", N_DN, "dn")
+  plot(metal$Zscore,-log10(metal$P.value),cex=0.5,pch=19,col="darkgray",
+       main=name, xlab="log FC", ylab="-log10 pval")
+  mtext(HEADER)
+  grid()
+  points(sig$Zscore,-log10(sig$P.value),cex=0.5,pch=19,col="red")
 }
 
 # Here is a function to make heatmaps based on smallest p-values
