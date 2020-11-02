@@ -167,13 +167,13 @@ head(top_nat_vs_fh_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_nat_vs_fh$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_nat_vs_fh$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -227,13 +227,12 @@ head(top_nat_vs_fz_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_nat_vs_fz$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
-
 
 fitSE <- as.data.frame(top_nat_vs_fz$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -286,13 +285,13 @@ head(top_nat_vs_GIFT_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_nat_vs_GIFT$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_nat_vs_GIFT$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -348,13 +347,13 @@ head(top_nat_vs_FX_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_nat_vs_FX$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_nat_vs_FX$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -412,13 +411,13 @@ head(top_GIFT_vs_FX_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_GIFT_vs_FX$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_GIFT_vs_FX$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -474,13 +473,13 @@ head(top_nat_vs_ART_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_nat_vs_ART$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_nat_vs_ART$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
@@ -533,13 +532,13 @@ head(top_fh_vs_fz_metal)
 # Convert fit outputs to dataframes
 fitCE <- as.data.frame(top_fh_vs_fz$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
-fitCE <- fitCE[,c("Row.names", "groupsYes")]
+fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
 
 fitSE <- as.data.frame(top_fh_vs_fz$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
-fitSE <- fitSE[,c("Row.names", "groupsYes")]
+fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
