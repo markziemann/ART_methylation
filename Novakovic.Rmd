@@ -9,11 +9,15 @@ theme: cosmo
 ---
 
 ```{r,packages}
+
 source("meth_functions.R")
+
 ```
+
 # Obtaining array annotations
 
 ```{r,annotation}
+
 anno <- getAnnotation(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
 myann <- data.frame(anno[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
@@ -31,6 +35,7 @@ ART-conceived individuals and for 58 neonatal (37♀, 21♂) and 75 adult (51♀
 
 
 ```{r,download}
+
 ARRAY_DATA="GSE131433_RAW.tar"
 if(!dir.exists("IDAT")){
   download.file("https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE131433&format=file",destfile=ARRAY_DATA) 
@@ -54,15 +59,18 @@ rgSet
 ```
 
 ```{r,norm,fig.cap="Figure 1. Normalisation of bead-array data with SWAN."}
+
 mSet <- preprocessRaw(rgSet)
 mSetSw <- SWAN(mSet,verbose=FALSE)
 par(mfrow=c(1,2), cex=0.8)
 densityByProbeType(mSet[,1], main = "Raw")
 densityByProbeType(mSetSw[,1], main = "SWAN")
+
 ```
 
 
 ```{r,filterprobes}
+
 # include sex chromosomes
 detP <- detectionP(rgSet)
 keep <- rowSums(detP < 0.01) == ncol(rgSet)
@@ -79,6 +87,7 @@ mSetFlt <- mSetSw[which(!rownames(mSetSw) %in% xyprobes),]
 ```
 
 ```{r,beta_m_vals}
+
 # include sex chromosomes
 meth <- getMeth(mSetSw)
 unmeth <- getUnmeth(mSetSw)
@@ -94,17 +103,21 @@ beta_flt <- getBeta(mSetFlt)
 dim(Mval_flt)
 
 ```
+
 # MDS analysis
 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
+
 par(mfrow=c(2,1))  
 myscree(Mval,main="incl sex chr")
 myscree(Mval_flt,main="excl sex chr")
+
 ```
 
 #MDS plot 1
 
 ```{r,mds1,fig.width = 8 ,fig.height = 8,fig.cap="Figure 3. MDS plot coloured by ART classification."}
+
 colnames(targets) <- gsub(" ","_",colnames(targets)) 
 colnames(targets) <- gsub(":","_",colnames(targets))
 targets$sex<-factor(targets$`gender_ch1`)
@@ -116,14 +129,20 @@ plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
 mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+
 ```
+
 #save data object
+
 ```{r,save}
+
 save.image("Novakovic.Rdata")
+
 ```
 
 
 #Differential analysis
+
 1. non-ART Vs Fresh embryo
 
 2. non-ART Vs Frozen embryo
@@ -139,7 +158,9 @@ save.image("Novakovic.Rdata")
 7. Fresh Vs Frozen
 
 ### non-ART Vs Fresh embryo
+
 ```{r,dm1}
+
 targets$Basename <- gsub("IDAT/","",targets$Basename)  
 birth<-targets[which(targets$`time_of_collection`=="birth"),]
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Fresh embryo")
@@ -155,10 +176,10 @@ head(top_nat_vs_fh$dma,10)
 head(top_nat_vs_fh$dmr,10)
 
 # Allele
+
 top_nat_vs_fh$dma$unmeth <- "T"
 top_nat_vs_fh$dma$meth <- "C"
 top_nat_vs_fh$fit$SE <- sqrt(top_nat_vs_fh$fit$s2.post) * top_nat_vs_fh$fit$stdev.unscaled
-
 
 # Extract required columns from dma
 top_nat_vs_fh_metal <-top_nat_vs_fh$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
@@ -170,7 +191,6 @@ fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
-
 fitSE <- as.data.frame(top_nat_vs_fh$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
 fitSE <- fitSE[,c(4,3)]
@@ -181,26 +201,23 @@ top_nat_vs_fh_metal <- merge(top_nat_vs_fh_metal, fitCE)
 top_nat_vs_fh_metal <- merge(top_nat_vs_fh_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`fh:ch1` == "No",]
-cases <- samplesheet[samplesheet$`fh:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_nat_vs_fh_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_fh_metal, file="NATvsFH/novakovic_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_nat_vs_fh_metal, file="novakovic_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
 head(top_nat_vs_fh_metal)
+
 ```
 
 
 ### non-ART Vs Frozen embryo
+
 ```{r,dm2}
+
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
@@ -213,12 +230,10 @@ myann=myann ,beta= betas)
 head(top_nat_vs_fz$dma,10)
 head(top_nat_vs_fz$dmr,10)
 
-
 # Allele
 top_nat_vs_fz$dma$unmeth <- "T"
 top_nat_vs_fz$dma$meth <- "C"
 top_nat_vs_fz$fit$SE <- sqrt(top_nat_vs_fz$fit$s2.post) * top_nat_vs_fz$fit$stdev.unscaled
-
 
 # Extract required columns from dma
 top_nat_vs_fz_metal <-top_nat_vs_fz$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
@@ -240,17 +255,11 @@ top_nat_vs_fz_metal <- merge(top_nat_vs_fz_metal, fitCE)
 top_nat_vs_fz_metal <- merge(top_nat_vs_fz_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`fz:ch1` == "No",]
-cases <- samplesheet[samplesheet$`fz:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_nat_vs_fz_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_fz_metal, file="NATvsFZ/novakovic_top_nat_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_nat_vs_fz_metal, file="novakovic_top_nat_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
@@ -259,7 +268,9 @@ head(top_nat_vs_fz_metal)
 ```
 
 ### non-ART Vs GIFT
+
 ```{r,dm3}
+
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="GIFT")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","GIFT"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
@@ -277,7 +288,6 @@ top_nat_vs_GIFT$dma$unmeth <- "T"
 top_nat_vs_GIFT$dma$meth <- "C"
 top_nat_vs_GIFT$fit$SE <- sqrt(top_nat_vs_GIFT$fit$s2.post) * top_nat_vs_GIFT$fit$stdev.unscaled
 
-
 # Extract required columns from dma
 top_nat_vs_GIFT_metal <-top_nat_vs_GIFT$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
 head(top_nat_vs_GIFT_metal)
@@ -287,7 +297,6 @@ fitCE <- as.data.frame(top_nat_vs_GIFT$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
-
 
 fitSE <- as.data.frame(top_nat_vs_GIFT$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
@@ -299,25 +308,22 @@ top_nat_vs_GIFT_metal <- merge(top_nat_vs_fz_metal, fitCE)
 top_nat_vs_GIFT_metal <- merge(top_nat_vs_fz_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`GIFT:ch1` == "No",]
-cases <- samplesheet[samplesheet$`GIFT:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_nat_vs_GIFT_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_GIFT_metal, file="NATvsGIFT/novakovic_top_nat_vs_GIFT_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_nat_vs_GIFT_metal, file="novakovic_top_nat_vs_GIFT_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_GIFT$dma)
 head(top_nat_vs_GIFT$dmr)
 head(top_nat_vs_GIFT_metal)
+
 ```
 
 ### non-ART Vs FX
+
 ```{r,dm4}
+
 samplesheet <- subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo" | art_subtype_ch1=="Fresh embryo")
 samplesheet$art_subtype <- gsub("Fresh embryo","FX",samplesheet$art_subtype)
 samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
@@ -333,12 +339,10 @@ myann=myann ,beta= betas)
 head(top_nat_vs_FX$dma,10)
 head(top_nat_vs_FX$dmr,10)
 
-
 # Allele
 top_nat_vs_FX$dma$unmeth <- "T"
 top_nat_vs_FX$dma$meth <- "C"
 top_nat_vs_FX$fit$SE <- sqrt(top_nat_vs_FX$fit$s2.post) * top_nat_vs_FX$fit$stdev.unscaled
-
 
 # Extract required columns from dma
 top_nat_vs_FX_metal <-top_nat_vs_FX$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
@@ -350,7 +354,6 @@ fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
-
 fitSE <- as.data.frame(top_nat_vs_FX$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
 fitSE <- fitSE[,c(4,3)]
@@ -361,17 +364,11 @@ top_nat_vs_FX_metal <- merge(top_nat_vs_FX_metal, fitCE)
 top_nat_vs_FX_metal <- merge(top_nat_vs_FX_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`FX:ch1` == "No",]
-cases <- samplesheet[samplesheet$`FX:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_nat_vs_FX_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_FX_metal, file="NATvsFX/novakovic_top_nat_vs_FX_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_nat_vs_FX_metal, file="novakovic_top_nat_vs_FX_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_FX$dma)
 head(top_nat_vs_FX$dmr)
@@ -380,7 +377,9 @@ head(top_nat_vs_FX_metal)
 ```
 
 ### GIFT Vs FX
+
 ```{r,dm5}
+
 samplesheet <- subset(birth,art_subtype_ch1=="GIFT"|art_subtype_ch1=="Frozen embryo" | art_subtype_ch1=="Fresh embryo")
 samplesheet$art_subtype <- gsub("Fresh embryo","FX",samplesheet$art_subtype)
 samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
@@ -389,7 +388,6 @@ sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
 
-
 top_GIFT_vs_FX <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
 myann=myann ,beta= betas)
@@ -397,12 +395,10 @@ head(top_GIFT_vs_FX$dma,10)
 head(top_GIFT_vs_FX$dmr,10)
 write.table(top_GIFT_vs_FX$dma,file="novakovic_top_GIFT_vs_FX.tsv",sep="\t",quote=FALSE)
 
-
 # Allele
 top_GIFT_vs_FX$dma$unmeth <- "T"
 top_GIFT_vs_FX$dma$meth <- "C"
 top_GIFT_vs_FX$fit$SE <- sqrt(top_GIFT_vs_FX$fit$s2.post) * top_GIFT_vs_FX$fit$stdev.unscaled
-
 
 # Extract required columns from dma
 top_GIFT_vs_FX_metal <-top_GIFT_vs_FX$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
@@ -414,7 +410,6 @@ fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
-
 fitSE <- as.data.frame(top_GIFT_vs_FX$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
 fitSE <- fitSE[,c(4,3)]
@@ -425,17 +420,11 @@ top_GIFT_vs_FX_metal <- merge(top_GIFT_vs_FX_metal, fitCE)
 top_GIFT_vs_FX_metal <- merge(top_GIFT_vs_FX_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`FX:ch1` == "No",]
-cases <- samplesheet[samplesheet$`FX:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_GIFT_vs_FX_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_GIFT_vs_FX_metal, file="GIFTvsFX/novakovic_top_GIFT_vs_FX_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_GIFT_vs_FX_metal, file="novakovic_top_GIFT_vs_FX_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_GIFT_vs_FX$dma)
 head(top_GIFT_vs_FX$dmr)
@@ -444,13 +433,14 @@ head(top_GIFT_vs_FX_metal)
 ```
 
 ### non-ART Vs ART
+
 ```{r,dm6}
+
 samplesheet<-birth
 groups <- factor(samplesheet$art_status,levels=c("non-ART","ART"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
-
 
 top_nat_vs_ART <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
@@ -459,12 +449,10 @@ head(top_nat_vs_ART$dma,10)
 head(top_nat_vs_ART$dmr,10)
 write.table(top_nat_vs_ART$dma,file="novakovic_top_nat_vs_ART.tsv",sep="\t",quote=FALSE)
 
-
 # Allele
 top_nat_vs_ART$dma$unmeth <- "T"
 top_nat_vs_ART$dma$meth <- "C"
 top_nat_vs_ART$fit$SE <- sqrt(top_nat_vs_ART$fit$s2.post) * top_nat_vs_ART$fit$stdev.unscaled
-
 
 # Extract required columns from dma
 top_nat_vs_ART_metal <-top_nat_vs_ART$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
@@ -476,7 +464,6 @@ fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
 
-
 fitSE <- as.data.frame(top_nat_vs_ART$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
 fitSE <- fitSE[,c(4,3)]
@@ -487,31 +474,27 @@ top_nat_vs_ART_metal <- merge(top_nat_vs_ART_metal, fitCE)
 top_nat_vs_ART_metal <- merge(top_nat_vs_ART_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`ART:ch1` == "No",]
-cases <- samplesheet[samplesheet$`ART:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_nat_vs_ART_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_ART_metal, file="NATvsART/novakovic_top_nat_vs_ART_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_nat_vs_ART_metal, file="novakovic_top_nat_vs_ART_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_ART$dma)
 head(top_nat_vs_ART$dmr)
 head(top_nat_vs_ART_metal)
+
 ```
 
 ### Fresh embryo Vs Frozen embryo
+
 ```{r, dm7}
+
 samplesheet <- subset(birth,art_subtype_ch1=="Fresh embryo"|art_subtype_ch1=="Frozen embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("Fresh embryo","Frozen embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
 Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
 betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
-
 
 top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
@@ -524,7 +507,6 @@ top_fh_vs_fz$dma$unmeth <- "T"
 top_fh_vs_fz$dma$meth <- "C"
 top_fh_vs_fz$fit$SE <- sqrt(top_fh_vs_fz$fit$s2.post) * top_fh_vs_fz$fit$stdev.unscaled
 
-
 # Extract required columns from dma
 top_fh_vs_fz_metal <-top_fh_vs_fz$dma[,c("Row.names", "meth", "unmeth", "AveExpr", "P.Value")]
 head(top_fh_vs_fz_metal)
@@ -534,7 +516,6 @@ fitCE <- as.data.frame(top_fh_vs_fz$fit$coefficients)
 fitCE$Row.names <- row.names(fitCE)
 fitCE <- fitCE[,c(4,3)]
 names(fitCE)[2]<- "coefficient"
-
 
 fitSE <- as.data.frame(top_fh_vs_fz$fit$SE)
 fitSE$Row.names <- row.names(fitSE)
@@ -546,17 +527,11 @@ top_fh_vs_fz_metal <- merge(top_fh_vs_fz_metal, fitCE)
 top_fh_vs_fz_metal <- merge(top_fh_vs_fz_metal, fitSE)
 
 # Number of effective participants
-controls <- samplesheet[samplesheet$`fz:ch1` == "No",]
-cases <- samplesheet[samplesheet$`fz:ch1` == "Yes",]
-ctrl <- nrow(controls)
-cses <- nrow(cases)
-Neff <- 4/((1/cses)+(1/ctrl))
-
+Neff = 4/sum(1/table(groups))
 top_fh_vs_fz_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_fh_vs_fz_metal, file="fhvsfz/novakovic_top_fh_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
-
+write.table(top_fh_vs_fz_metal, file="novakovic_top_fh_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
@@ -567,6 +542,7 @@ head(top_fh_vs_fz_metal)
 ## Venn diagrams of the differential methylated probes for each contrast
 
 ```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
+
 load("Novakovic.Rdata")
 save.image("Novakovic.Rdata")
 v1 <- list("FH up" = top_nat_vs_fh$dm_up , 
@@ -574,10 +550,11 @@ v1 <- list("FH up" = top_nat_vs_fh$dm_up ,
            "FH dn" = top_nat_vs_fh$dm_dn ,
            "FZ dn" = top_nat_vs_fz$dm_dn )
 plot(euler(v1, shape = "ellipse"), quantities = TRUE)
+
 ```
 
-
 ```{r,venn2,fig.cap="Comparison of probes altered by GIFT, fresh and frozen IVF procedures"}
+
 v2 <- list("FH up" = top_nat_vs_fh$dm_up , 
            "FH dn" = top_nat_vs_fh$dm_dn ,
            "GIFT up" = top_nat_vs_GIFT$dm_up ,
@@ -589,11 +566,13 @@ v3 <- list("FZ up" = top_nat_vs_fz$dm_up ,
            "GIFT up" = top_nat_vs_GIFT$dm_up ,
            "GIFT dn" = top_nat_vs_GIFT$dm_dn )
 plot(euler(v3, shape = "ellipse"), quantities = FALSE)
+
 ```
 
-
 ## Spearman correlations of each contrast
+
 ```{r,spearman}
+
 mycontrasts <- list("top_nat_vs_fh"=top_nat_vs_fh, "top_nat_vs_fz"=top_nat_vs_fz, "top_nat_vs_FX"=top_nat_vs_FX ,
   "top_nat_vs_GIFT"=top_nat_vs_GIFT, "top_fh_vs_fz"=top_fh_vs_fz, "top_GIFT_vs_FX"=top_GIFT_vs_FX, "top_nat_vs_ART"=top_nat_vs_ART)
 myrnks <- lapply(X = mycontrasts, FUN = myranks)
@@ -607,10 +586,13 @@ my_palette <- colorRampPalette(c("darkred","red", "orange", "yellow","white"))(n
 heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.8,
     col=my_palette,main="Spearman correlations")
 mycors
+
 ```
 
 ## SessionInfo
 
 ```{r,session}
+
 sessionInfo()
+
 ```
