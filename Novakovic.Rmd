@@ -108,9 +108,9 @@ dim(Mval_flt)
 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 
-par(mfrow=c(2,1))  
-myscree(Mval,main="incl sex chr")
-myscree(Mval_flt,main="excl sex chr")
+#par(mfrow=c(2,1))  
+#myscree(Mval,main="incl sex chr")
+#myscree(Mval_flt,main="excl sex chr")
 
 ```
 
@@ -127,8 +127,8 @@ colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets$art))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+#mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
+#mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 
 ```
 
@@ -304,8 +304,8 @@ fitSE <- fitSE[,c(4,3)]
 names(fitSE)[2]<- "SE"
 
 # Merge Datasets
-top_nat_vs_GIFT_metal <- merge(top_nat_vs_fz_metal, fitCE)
-top_nat_vs_GIFT_metal <- merge(top_nat_vs_fz_metal, fitSE)
+top_nat_vs_GIFT_metal <- merge(top_nat_vs_GIFT_metal, fitCE)
+top_nat_vs_GIFT_metal <- merge(top_nat_vs_GIFT_metal, fitSE)
 
 # Number of effective participants
 Neff = 4/sum(1/table(groups))
@@ -588,6 +588,42 @@ heatmap.2(mycors,scale="none",margin=c(10, 10),cexRow=0.8,trace="none",cexCol=0.
 mycors
 
 ```
+
+## Mitch analysis
+
+```{r,mitch1d}
+
+library (mitch) 
+
+download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+destfile="ReactomePathways.gmt.zip")
+unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+genesets <- gmt_import("ReactomePathways.gmt") 
+
+top_nat_vs_fh_mitch  <- run_mitch_1d(dma=top_nat_vs_fh$dma,name="nat_vs_fh") 
+head(top_nat_vs_fh_mitch)
+
+top_nat_vs_fz_mitch  <- run_mitch_1d(dma=top_nat_vs_fz$dma,name="nat_vs_fz")
+head(top_nat_vs_fz_mitch)
+
+top_nat_vs_GIFT_mitch  <- run_mitch_1d(dma=top_nat_vs_GIFT$dma,name="nat_vs_GIFT")
+head(top_nat_vs_GIFT_mitch)
+
+top_nat_vs_FX_mitch  <- run_mitch_1d(dma=top_nat_vs_FX$dma,name="nat_vs_FX")
+head(top_nat_vs_FX_mitch)
+
+top_GIFT_vs_FX_mitch  <- run_mitch_1d(dma=top_GIFT_vs_FX$dma,name="GIFT_vs_FX")
+head(top_GIFT_vs_FX_mitch)
+
+top_nat_vs_ART_mitch  <- run_mitch_1d(dma=top_nat_vs_ART$dma,name="nat_vs_ART")
+head(top_nat_vs_ART_mitch)
+
+top_fh_vs_fz_mitch  <- run_mitch_1d(dma=top_fh_vs_fz$dma,name="fh_vs_fz")
+head(top_fh_vs_fz_mitch)
+
+```
+
+
 
 ## SessionInfo
 
