@@ -108,9 +108,9 @@ dim(Mval_flt)
 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 
-#par(mfrow=c(2,1))  
-#myscree(Mval,main="incl sex chr")
-#myscree(Mval_flt,main="excl sex chr")
+par(mfrow=c(2,1))  
+myscree(Mval,main="incl sex chr")
+myscree(Mval_flt,main="excl sex chr")
 
 ```
 
@@ -127,8 +127,8 @@ colour_palette=brewer.pal(n = length(levels(sample_groups)), name = "Paired")
 colours <- colour_palette[as.integer(factor(targets$art))]
 plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
-#mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
-#mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
+mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 
 ```
 
@@ -211,6 +211,8 @@ head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
 head(top_nat_vs_fh_metal)
 
+saveRDS(top_nat_vs_fh,file="top_nat_vs_fh.rds")
+
 ```
 
 
@@ -265,6 +267,8 @@ head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
 head(top_nat_vs_fz_metal)
 
+saveRDS(top_nat_vs_fz,file="top_nat_vs_fz.rds")
+
 ```
 
 ### non-ART Vs GIFT
@@ -317,6 +321,8 @@ write.table(top_nat_vs_GIFT_metal, file="novakovic_top_nat_vs_GIFT_metal.tsv",se
 head(top_nat_vs_GIFT$dma)
 head(top_nat_vs_GIFT$dmr)
 head(top_nat_vs_GIFT_metal)
+
+saveRDS(top_nat_vs_GIFT,file="top_nat_vs_GIFT.rds")
 
 ```
 
@@ -374,6 +380,8 @@ head(top_nat_vs_FX$dma)
 head(top_nat_vs_FX$dmr)
 head(top_nat_vs_FX_metal)
 
+saveRDS(top_nat_vs_FX,file="top_nat_vs_FX.rds")
+
 ```
 
 ### GIFT Vs FX
@@ -430,6 +438,8 @@ head(top_GIFT_vs_FX$dma)
 head(top_GIFT_vs_FX$dmr)
 head(top_GIFT_vs_FX_metal)
 
+saveRDS(top_GIFT_vs_FX,file="top_GIFT_vs_FX.rds")
+
 ```
 
 ### non-ART Vs ART
@@ -484,7 +494,10 @@ head(top_nat_vs_ART$dma)
 head(top_nat_vs_ART$dmr)
 head(top_nat_vs_ART_metal)
 
+saveRDS(top_nat_vs_ART,file="top_nat_vs_ART.rds")
+
 ```
+
 
 ### Fresh embryo Vs Frozen embryo
 
@@ -537,14 +550,14 @@ head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
 head(top_fh_vs_fz_metal)
 
+saveRDS(top_fh_vs_fz,file="top_fh_vs_fz.rds")
+
 ```
 
 ## Venn diagrams of the differential methylated probes for each contrast
 
 ```{r,venn1,fig.cap="Comparison of probes altered by fresh and frozen IVF procedures"}
 
-load("Novakovic.Rdata")
-save.image("Novakovic.Rdata")
 v1 <- list("FH up" = top_nat_vs_fh$dm_up , 
            "FZ up" = top_nat_vs_fz$dm_up ,
            "FH dn" = top_nat_vs_fh$dm_dn ,
@@ -595,31 +608,34 @@ mycors
 
 library (mitch) 
 
-download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
-destfile="ReactomePathways.gmt.zip")
-unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+if (! file.exists("ReactomePathways.gmt") ) {
+  download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+  destfile="ReactomePathways.gmt.zip")
+  unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+}
+
 genesets <- gmt_import("ReactomePathways.gmt") 
 
 top_nat_vs_fh_mitch  <- run_mitch_1d(dma=top_nat_vs_fh$dma,name="nat_vs_fh") 
-head(top_nat_vs_fh_mitch)
+head(top_nat_vs_fh_mitch,20)
 
 top_nat_vs_fz_mitch  <- run_mitch_1d(dma=top_nat_vs_fz$dma,name="nat_vs_fz")
-head(top_nat_vs_fz_mitch)
+head(top_nat_vs_fz_mitch,20)
 
 top_nat_vs_GIFT_mitch  <- run_mitch_1d(dma=top_nat_vs_GIFT$dma,name="nat_vs_GIFT")
-head(top_nat_vs_GIFT_mitch)
+head(top_nat_vs_GIFT_mitch,20)
 
 top_nat_vs_FX_mitch  <- run_mitch_1d(dma=top_nat_vs_FX$dma,name="nat_vs_FX")
-head(top_nat_vs_FX_mitch)
+head(top_nat_vs_FX_mitch,20)
 
 top_GIFT_vs_FX_mitch  <- run_mitch_1d(dma=top_GIFT_vs_FX$dma,name="GIFT_vs_FX")
-head(top_GIFT_vs_FX_mitch)
+head(top_GIFT_vs_FX_mitch,20)
 
 top_nat_vs_ART_mitch  <- run_mitch_1d(dma=top_nat_vs_ART$dma,name="nat_vs_ART")
-head(top_nat_vs_ART_mitch)
+head(top_nat_vs_ART_mitch,20)
 
 top_fh_vs_fz_mitch  <- run_mitch_1d(dma=top_fh_vs_fz$dma,name="fh_vs_fz")
-head(top_fh_vs_fz_mitch)
+head(top_fh_vs_fz_mitch,20)
 
 ```
 

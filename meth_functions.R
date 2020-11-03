@@ -426,7 +426,7 @@ run_mitch_1d <- function(dma,name) {
     type = c("output", "message"), split = FALSE)
   head(res$enrichment_result,20)
   capture.output(
-    mitch_plots(res,outfile=paste(name,".pdf"))
+    mitch_plots(res,outfile=paste(name,".pdf",sep=""))
     , file = "/dev/null", append = FALSE,
     type = c("output", "message"), split = FALSE)
   return(res$enrichment_result)
