@@ -8,7 +8,7 @@ output:
 theme: cosmo
 ---
 
-##Loading packages
+## Loading packages
 
 ```{r,packages}
 
@@ -29,6 +29,7 @@ suppressPackageStartupMessages({
   library("BSgenome")
   library("MEDIPS")
   library("DESeq2")
+  library("mitch")
   library("BSgenome.Hsapiens.UCSC.hg19")
   library("ensembldb")
   library("EnsDb.Hsapiens.v75")
@@ -37,15 +38,38 @@ suppressPackageStartupMessages({
 
 ```
 
+## Annotation
+
 ```{r,anno}
 
-#Annotation
 names(listTables(EnsDb.Hsapiens.v75))
 ensgenes<-genes(EnsDb.Hsapiens.v75)
 enstranscripts<-transcripts(EnsDb.Hsapiens.v75)
 enspromoters<-promoters(EnsDb.Hsapiens.v75,columns=c("gene_id","gene_name"))
 head(enspromoters)
 head(ensgenes)
+
+
+#Curate a bunch of regions that are located near promoters for enrichment analysis
+seqnames <- sapply(strsplit(rownames(counts)," "),"[[",1)
+seqnames <- gsub("chr","",seqnames)
+start <- as.integer(sapply(strsplit(rownames(counts)," "),"[[",2))
+end <- as.integer(sapply(strsplit(rownames(counts)," "),"[[",3))
+myranges <- GRanges(seqnames=seqnames,ranges=IRanges(start = start , end = end)) 
+ol <- findOverlaps(enspromoters,myranges)
+pro <- myranges[subjectHits(ol)]
+an <- data.frame(enspromoters[queryHits(ol)]) 
+pro$gene_name <- an$gene_name
+pro <- data.frame(pro)
+pro$seqnames <- paste("chr",pro$seqnames,sep="")
+pro$coord <-paste(pro$seqnames,pro$start,pro$end)
+gt <- pro[,c("coord","gene_name")]
+#gt$coord <- paste("chr",gt$coord,sep="")
+
+# genesets
+download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", destfile="ReactomePathways.gmt.zip")
+unzip("ReactomePathways.gmt.zip")
+genesets <- gmt_import("ReactomePathways.gmt")
 
 ```
 
@@ -175,6 +199,14 @@ heatmaps<-function(samplesheet,dge,confects){
   dgem<-as.matrix(dge[rows,7:ncol(dge)])
   heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,
     cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+}
+
+# custom barplot for 1d mitch
+mitch_barplot <- function(res){
+  sig <- head(res$enrichment_result,30)
+  sig <- sig[order(sig$s.dist),]
+  par(mar=c(3,25,1,1)); barplot(sig$s.dist,horiz=TRUE,las=2,cex.names = 0.6,cex.axis = 0.6,
+    names.arg=sig$set,main="Enrichment score") ;grid()
 }
 
 ```
@@ -332,6 +364,13 @@ write.table(dge,file="dm1.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm1confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm1.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## Natural Vs GIFT
@@ -380,6 +419,13 @@ write.table(dge,file="dm2.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm2confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm2.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## Natural Vs ICSI fresh
@@ -427,6 +473,13 @@ myanno$gr_down
 write.table(dge,file="dm3.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm3confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm3.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -477,6 +530,13 @@ write.table(dge,file="dm4.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm4confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm4.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## ICSI fresh Vs ICSI frozen
@@ -524,6 +584,13 @@ myanno$gr_down
 write.table(dge,file="dm5.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm5confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm5.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -573,6 +640,13 @@ write.table(dge,file="dm6.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm6confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm6.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
@@ -620,6 +694,13 @@ myanno$gr_down
 write.table(dge,file="dm7.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm7confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm7.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -669,6 +750,13 @@ write.table(dge,file="dm8.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm8confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm8.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## GIFT vs ICSI fresh
@@ -717,6 +805,13 @@ write.table(dge,file="dm9.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm9confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm9.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## GIFT vs ICSI frozen
@@ -764,6 +859,13 @@ myanno$gr_down
 write.table(dge,file="dm10.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm10confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm10.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -839,6 +941,13 @@ write.table(dge,file="dmw1.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw1confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw1.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## Natural Vs GIFT
@@ -886,6 +995,13 @@ myanno$gr_down
 write.table(dge,file="dmw2.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw2confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw2.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -935,6 +1051,13 @@ write.table(dge,file="dmw3.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw3confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw3.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## Natural Vs ICSI frozen
@@ -982,6 +1105,13 @@ myanno$gr_down
 write.table(dge,file="dmw4.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw4confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw4.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -1031,6 +1161,13 @@ write.table(dge,file="dmw5.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw5confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw5.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## ovarian stimulation vs GIFT
@@ -1078,6 +1215,13 @@ myanno$gr_down
 write.table(dge,file="dmw6.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw6confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw6.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -1127,6 +1271,13 @@ write.table(dge,file="dmw7.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw7confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw7.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## ovarian stimulation vs ICSI frozen
@@ -1174,6 +1325,13 @@ myanno$gr_down
 write.table(dge,file="dmw8.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw8confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw8.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -1223,6 +1381,13 @@ write.table(dge,file="dmw9.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw9confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw9.rds")
 
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
+
 ```
 
 ## GIFT vs ICSI frozen
@@ -1270,6 +1435,13 @@ myanno$gr_down
 write.table(dge,file="dmw10.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dmw10confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw10.rds")
+
+# run mitch 1d
+y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
+dgem <- dge[which(rownames(dge) %in% gt$coord),] 
+m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
+mr <- mitch_calc(m, genesets, priority="significance")
+head(mr$enrichment_result,20)
 
 ```
 
@@ -1328,8 +1500,9 @@ hypomethylated-0
 
 ## summary of DMRs in WBMCs
 
-
 ```{r,session info}
+
 sessionInfo()
+
 ```
 
