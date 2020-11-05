@@ -1,42 +1,44 @@
 ---
-title: "Castillo-Fernandez2017.Rmd"
-author: "Mary"
-date: "8/3/2020"
+title: "Castillo-Fernandez 2017 Reanalysis"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
 output:
+  html_document:
+    toc: true
+theme: cosmo
 ---
-
-
-
-
 
 ##Loading packages
 
 ```{r,packages}
+
 suppressPackageStartupMessages({
-    library("R.utils")
-    library("missMethyl")
-    library("limma")
-    library("topconfects")
-    library("minfi")
-    library("IlluminaHumanMethylation450kmanifest")
-    library("MethylToSNP")
-    library("RColorBrewer")
-    library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
-    library("eulerr")
-    library("plyr")
-    library("gplots")
-    library("reshape2")
-    library("beeswarm")
+  library("R.utils")
+  library("missMethyl")
+  library("limma")
+  library("topconfects")
+  library("minfi")
+  library("IlluminaHumanMethylation450kmanifest")
+  library("RColorBrewer")
+  library("IlluminaHumanMethylation450kanno.ilmn12.hg19")
+  library("eulerr")
+  library("plyr")
+  library("gplots")
+  library("reshape2")
+  library("beeswarm")
   library("BSgenome")
-library("MEDIPS")
+  library("MEDIPS")
   library("DESeq2")
-library("BSgenome.Hsapiens.UCSC.hg19")
+  library("BSgenome.Hsapiens.UCSC.hg19")
   library("ensembldb")
   library("EnsDb.Hsapiens.v75")
   library("GenomicRanges")
   })
+
 ```
+
 ```{r,anno}
+
 #Annotation
 names(listTables(EnsDb.Hsapiens.v75))
 ensgenes<-genes(EnsDb.Hsapiens.v75)
@@ -44,9 +46,11 @@ enstranscripts<-transcripts(EnsDb.Hsapiens.v75)
 enspromoters<-promoters(EnsDb.Hsapiens.v75,columns=c("gene_id","gene_name"))
 head(enspromoters)
 head(ensgenes)
+
 ```
 
 ```{r,functions}
+
 #customised beeswarm chart for MEDIP Seq data
 make_beeswarm2<- function(dm,name,mx,groups,n=15) {
     par(mar=c(3,3,1,1))
@@ -100,112 +104,125 @@ make_beeswarms_confects2 <- function(confects,name,mx,groups,n=15) {
     }
 }
 
-
-
 # Annotation 
 anno<-function(dge,ensgenes){
-dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
-dge$chr<-gsub("chr","",dge$chr)
-dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
-dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
+  dge$chr<-sapply(strsplit(rownames(dge)," "),"[[",1)
+  dge$chr<-gsub("chr","",dge$chr)
+  dge$start<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",2))
+  dge$end<-as.integer(sapply(strsplit(rownames(dge)," "),"[[",3))
 
-sig<-subset(dge,pvalue<.05)
-sig_down<-subset(sig,log2FoldChange<0)
-sig_up<-subset(sig,log2FoldChange>0)
+  sig<-subset(dge,pvalue<.05)
+  sig_down<-subset(sig,log2FoldChange<0)
+  sig_up<-subset(sig,log2FoldChange>0)
 
-gr_up<-GRanges(seqnames=sig_up$chr,
-ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
-gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
-ol_up<-distanceToNearest(gr_up, ensgenes)
-ol_up
-gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
-gr_up$distance <- elementMetadata(ol_up)
-gr_up
+  gr_up<-GRanges(seqnames=sig_up$chr,
+  ranges=IRanges(start = sig_up$start , end = sig_up$end)) 
+  gr_up <- gr_up[which(seqnames(gr_up) %in% seqnames(ensgenes)),]
+  ol_up<-distanceToNearest(gr_up, ensgenes)
+  ol_up
+  gr_up$gene <- ensgenes[subjectHits(ol_up),"symbol"]$symbol
+  gr_up$distance <- elementMetadata(ol_up)
+  gr_up
 
-gr_down<-GRanges(seqnames=sig_down$chr,
-ranges=IRanges(start = sig_down$start , end = sig_down$end))
-gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
-ol_down<-distanceToNearest(gr_down, ensgenes)
-ol_down
-gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
-gr_down$distance <- elementMetadata(ol_down)
-gr_down
-list("dge"=dge,"gr_up"=gr_up,"gr_down"=gr_down)
+  gr_down<-GRanges(seqnames=sig_down$chr,
+  ranges=IRanges(start = sig_down$start , end = sig_down$end))
+  gr_down <- gr_down[which(seqnames(gr_down) %in% seqnames(ensgenes)),]
+  ol_down<-distanceToNearest(gr_down, ensgenes)
+  ol_down
+  gr_down$gene <- ensgenes[subjectHits(ol_down),"symbol"]$symbol
+  gr_down$distance <- elementMetadata(ol_down)
+  gr_down
+  list("dge"=dge,"gr_up"=gr_up,"gr_down"=gr_down)
 }
 
 
 # volcano and smear plot
 volcanosmear<-function(dge){
-sig <- subset(dge,padj<0.05)
-SIG = nrow(sig)
-DN = nrow(subset(sig,log2FoldChange<0))
-UP = nrow(subset(sig,log2FoldChange>0))
-HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
+  sig <- subset(dge,padj<0.05)
+  SIG = nrow(sig)
+  DN = nrow(subset(sig,log2FoldChange<0))
+  UP = nrow(subset(sig,log2FoldChange>0))
+  HEADER = paste(NAME, SIG , "DMRs,", UP ,"hypermethylated,", DN, "hypomethylated")
 
-# smear plot
-plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 base mean",
-ylim=c(-3,3),ylab="log2 fold change"
-,pch=19,col="#838383")
-points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
+  # smear plot
+  plot(log2(dge$baseMean),dge$log2FoldChange,cex=0.6,cex.axis=1.2,cex.lab=1.3, 
+    xlab="log2 base mean",
+    ylim=c(-3,3),ylab="log2 fold change"
+    ,pch=19,col="#838383")
+  points(log2(sig$baseMean),sig$log2FoldChange,cex=0.6,pch=19,col="red")
+  mtext((HEADER),cex=1.0)
 
 
 #volcano plot
-plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
-xlab="log2 fold change",
-ylab="log10 pvalue"
-,pch=19,col="#838383")
-points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
-mtext((HEADER),cex=1.0)
+  plot(dge$log2FoldChange,-log10(dge$pvalue),cex=0.6,cex.axis=1.2,cex.lab=1.3, 
+    xlab="log2 fold change",
+    ylab="log10 pvalue"
+    ,pch=19,col="#838383")
+  points(sig$log2FoldChange,-log10(sig$pvalue),cex=0.6,pch=19,col="red")
+  mtext((HEADER),cex=1.0)
 }
 
 #heatmap chart
 heatmaps<-function(samplesheet,dge,confects){
-mygroups<-as.numeric(samplesheet$groups)
-colCols<-gsub("1","yellow",mygroups)
-colCols<-gsub("2","orange",colCols)
-my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
-dgem<-as.matrix(dge[1:50,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
-rows<-head(confects$table$index,50)
-dgem<-as.matrix(dge[rows,7:ncol(dge)])
-heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+  mygroups<-as.numeric(samplesheet$groups)
+  colCols<-gsub("1","yellow",mygroups)
+  colCols<-gsub("2","orange",colCols)
+  my_palette <- colorRampPalette(c("blue", "white", "red"))(n = 25)
+  dgem<-as.matrix(dge[1:50,7:ncol(dge)])
+  heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,
+    cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
+  rows<-head(confects$table$index,50)
+  dgem<-as.matrix(dge[rows,7:ncol(dge)])
+  heatmap.2(dgem,trace="none",scale="row",margin=c(5,5),col=my_palette,
+    cexRow = 0.5,cexCol = 0.4,ColSideColors =colCols)
 }
+
 ```
-
-
 
 ## counts 
 
-```{r,counts c}
-counts<-read.table("~/mr.edgeR.c.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
-mycol<-max(grep(".bam.counts",colnames(counts)))
-counts<-counts[,1:mycol]
-rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
-counts[,1:4]=NULL
-colnames(counts)<-gsub(".bam.counts","",colnames(counts))
+```{r,counts,fig.width=8,fig.height=8}
+
+counts <- read.table("mr.edgeR.c.tsv.gz",sep="\t",header=TRUE,row.names=1)
+mycol <- max(grep(".bam.counts",colnames(counts)))
+counts <- counts[,1:mycol]
+rownames(counts) <- paste(counts$chr,counts$start, counts$stop)
+counts[,1:4] = NULL
+colnames(counts) <- gsub(".bam.counts","",colnames(counts))
+dim(counts)
+# exclude X, Y and MT
+counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrM",rownames(counts),invert=TRUE),]
+dim(counts)
+
+# barplot of reads per sample
+par(mar=c(5,10,5,3))
+barplot(colSums(counts),horiz=TRUE,las=2,main="number of reads per sample",cex.names=0.5)
+
 ```
+
 ## metadata
+
 ```{r,metadata}
-sf1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
-rs1<-read.table("~/castillo_metadata/EGAD00001003159_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+
+sf1<-read.table("metadata/EGAD00001003159_metadata/Sample_File.map",stringsAsFactors = FALSE) 
+rs1<-read.table("metadata/EGAD00001003159_metadata/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
 rs1[,ncol(rs1)]=NULL
 md1<-apply(rs1,2,function(x){
   sapply(strsplit(x,"="),"[[",2)
-  })
+})
 headers<-t(rs1[1,])
 colnames(md1)<-sapply(strsplit(headers[,1],"="), "[[",1)
 rownames(md1)<-sf1[,1]
 md1<-as.data.frame(md1)
 
-
-sf2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Sample_File.map",stringsAsFactors = FALSE) 
-rs2<-read.table("~/castillo_metadata/EGAD00001003158_metadata/delimited_maps/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
+sf2<-read.table("metadata/EGAD00001003158_metadata/Sample_File.map",stringsAsFactors = FALSE) 
+rs2<-read.table("metadata/EGAD00001003158_metadata/Run_Sample_meta_info.map",sep=";",stringsAsFactors = FALSE)
 rs2[,ncol(rs2)]=NULL
 md2<-apply(rs2,2,function(x){
   sapply(strsplit(x,"="),"[[",2)
-  })
+})
 headers<-t(rs2[1,])
 colnames(md2)<-sapply(strsplit(headers[,1],"="), "[[",1)
 rownames(md2)<-sf2[,1]
@@ -230,7 +247,6 @@ nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"))
 nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 ## number of ICSI fresh embryo is 12
 nrow(subset(mdc,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
-
 
 ## WCB
 ## number of medical help to conceive is 54
@@ -273,7 +289,9 @@ CBMC and WMBC
 
 
 ## CBMC: Natural Vs Ovarian stimulation
+
 ```{r,dm1,fig.width=8,fig.height=8}
+
 NAME = "CBMC_natural_vs_ovarian_stimulation"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | ovarian_stimulation=="yes")
 samplesheet$groups <- factor(samplesheet$ovarian_stimulation,levels=c("no","yes"))
@@ -292,7 +310,6 @@ vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
-
 confects <- deseq2_confects(res)
 head(confects$table)
 volcanosmear(dge)
@@ -310,10 +327,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm1.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm1confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm1.rds")
+
 ```
 
 ## Natural Vs GIFT
+
 ```{r,dm2,fig.width=8,fig.height=8}
+
 NAME = "CBMC_natural_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -351,12 +375,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dm2.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm2confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm2.rds")
+
+```
 
 ## Natural Vs ICSI fresh
 
 ```{r,dm3,fig.width=8,fig.height=8}
+
 NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -394,12 +423,18 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm3.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm3confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm3.rds")
+
 ```
 
 
 ## Natural Vs ICSI frozen
 
 ```{r,dm4,fig.width=8,fig.height=8}
+
 NAME = "CBMC_natural_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -437,11 +472,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm4.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm4confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm4.rds")
+
 ```
 
 ## ICSI fresh Vs ICSI frozen
 
 ```{r,dm5,fig.width=8,fig.height=8}
+
 NAME = "CBMC_intracytoplasmic_sperm_injection_fresh_embryo_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
@@ -479,12 +520,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dm5.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm5confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm5.rds")
+
+```
 
 ## ovarian stimulation vs GIFT
 
 ```{r,dm6,fig.width=8,fig.height=8}
+
 NAME = "CBMC_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -522,11 +568,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm6.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm6confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm6.rds")
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
 
 ```{r,dm7,fig.width=8,fig.height=8}
+
 NAME = "CBMC_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -564,12 +616,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dm7.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm7confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm7.rds")
+
+```
 
 ## ovarian stimulation vs ICSI frozen
 
 ```{r,dm8,fig.width=8,fig.height=8}
+
 NAME = "CBMC_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -607,12 +664,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dm8.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm8confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm8.rds")
+
+```
 
 ## GIFT vs ICSI fresh
 
 ```{r,dm9,fig.width=8,fig.height=8}
+
 NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -650,11 +712,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dm9.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm9confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm9.rds")
+
 ```
 
 ## GIFT vs ICSI frozen
 
 ```{r,dm10,fig.width=8,fig.height=8}
+
 NAME = "CBMC_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdc, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -692,23 +760,40 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dm10.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dm10confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dm10.rds")
+
+```
 
 ## WMBC 
 
-```{r,counts w}
-counts<-read.table("~/mr.edgeR.w.test.tsv.gz",sep="\t",header=TRUE,row.names=1)
+```{r,counts w,fig.width=8,fig.height=8}
+
+counts<-read.table("mr.edgeR.w.tsv.gz",sep="\t",header=TRUE,row.names=1)
 mycol<-max(grep(".bam.counts",colnames(counts)))
 counts<-counts[,1:mycol]
 rownames(counts)<-paste(counts$chr,counts$start, counts$stop)
 counts[,1:4]=NULL
 colnames(counts)<-gsub(".bam.counts","",colnames(counts))
+dim(counts)
+# exclude X, Y and MT
+counts <- counts[grep("chrX",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrY",rownames(counts),invert=TRUE),]
+counts <- counts[grep("chrM",rownames(counts),invert=TRUE),]
+dim(counts)
+
+# barplot of reads per sample
+par(mar=c(5,10,5,3))
+barplot(colSums(counts),horiz=TRUE,las=2,main="number of reads per sample",cex.names=0.5)
+
 ```
 
 ## Natural Vs Ovarian stimulation
 
 ```{r,dmw1,fig.width=8,fig.height=8}
+
 NAME = "WCB_natural_vs_ovarian_stimulation"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | ovarian_stimulation=="yes")
 samplesheet$groups <- factor(samplesheet$ovarian_stimulation,levels=c("no","yes"))
@@ -749,11 +834,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw1.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw1confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw1.rds")
+
 ```
 
 ## Natural Vs GIFT
 
 ```{r,dmw2,fig.width=8,fig.height=8}
+
 NAME = "WBC_natural_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -791,11 +882,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw2.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw2confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw2.rds")
+
 ```
 
 ## Natural Vs ICSI fresh
 
 ```{r,dmw3,fig.width=8,fig.height=8}
+
 NAME = "WCB_natural_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -833,11 +930,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw3.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw3confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw3.rds")
+
 ```
 
 ## Natural Vs ICSI frozen
 
 ```{r,dmw4,fig.width=8,fig.height=8}
+
 NAME = "WCB_natural_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, medical_help_to_conceive=="no" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -875,12 +978,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dmw4.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw4confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw4.rds")
+
+```
 
 ## ICSI fresh Vs ICSI frozen
 
 ```{r,dmw5,fig.width=8,fig.height=8}
+
 NAME = "WCB_intracytoplasmic_sperm_injection_fresh_embryo_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, intracytoplasmic_sperm_injection=="yes")
 samplesheet$groups <- factor(samplesheet$frozen_embryo ,levels=c("no","yes"))
@@ -918,12 +1026,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dmw5.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw5confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw5.rds")
+
+```
 
 ## ovarian stimulation vs GIFT
 
 ```{r,dmw6,fig.width=8,fig.height=8}
+
 NAME = "WCB_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | gamete_intrafallopian_transfer=="yes")
 samplesheet$groups <- factor(samplesheet$gamete_intrafallopian_transfer,levels=c("no","yes"))
@@ -961,11 +1074,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw6.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw6confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw6.rds")
+
 ```
 
 ## ovarian stimulation vs ICSI fresh
 
 ```{r,dmw7,fig.width=8,fig.height=8}
+
 NAME = "WCB_ovarian_stimulation_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -1003,12 +1122,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dmw7.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw7confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw7.rds")
+
+```
 
 ## ovarian stimulation vs ICSI frozen
 
 ```{r,dmw8,fig.width=8,fig.height=8}
+
 NAME = "WCB_ovarian_stimulation_vs_gamete_intrafallopian_transfer"
 samplesheet<-subset(mdw, ovarian_stimulation=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -1046,12 +1170,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
-```
 
+write.table(dge,file="dmw8.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw8confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw8.rds")
+
+```
 
 ## GIFT vs ICSI fresh
 
 ```{r,dmw9,fig.width=8,fig.height=8}
+
 NAME = "WCB_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_fresh_embryo"
 samplesheet<-subset(mdw, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -1089,11 +1218,17 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw9.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw9confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw9.rds")
+
 ```
 
 ## GIFT vs ICSI frozen
 
 ```{r,dmw10,fig.width=8,fig.height=8}
+
 NAME = "WCB_gamete_intrafallopian_transfer_vs_intracytoplasmic_sperm_injection_frozen_embryo"
 samplesheet<-subset(mdw, gamete_intrafallopian_transfer=="yes" | (intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 samplesheet$groups <- factor(samplesheet$intracytoplasmic_sperm_injection,levels=c("no","yes"))
@@ -1131,7 +1266,13 @@ myanno<-anno(dge,ensgenes)
 head(myanno$dge)
 myanno$gr_up
 myanno$gr_down
+
+write.table(dge,file="dmw10.tsv",sep="\t",quote=FALSE)
+write.table(confects$table,file="dmw10confects.tsv",sep="\t",quote=FALSE)
+saveRDS(myanno,file="dmw10.rds")
+
 ```
+
 ## summary of DMRs in CBMCs
 
 * Natural Vs Ovarian stimulation
