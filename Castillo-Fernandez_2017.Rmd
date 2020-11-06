@@ -293,6 +293,7 @@ nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"))
 nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="yes"))
 ## number of ICSI fresh embryo is 12
 nrow(subset(mdw,intracytoplasmic_sperm_injection=="yes"&frozen_embryo=="no"))
+
 ```
 
 based on the numbers, following are the contrasts
@@ -365,7 +366,6 @@ write.table(confects$table,file="dm1confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm1.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -420,7 +420,6 @@ write.table(confects$table,file="dm2confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm2.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -475,7 +474,6 @@ write.table(confects$table,file="dm3confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm3.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -531,7 +529,6 @@ write.table(confects$table,file="dm4confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm4.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -586,7 +583,6 @@ write.table(confects$table,file="dm5confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm5.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -641,7 +637,6 @@ write.table(confects$table,file="dm6confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm6.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -696,7 +691,6 @@ write.table(confects$table,file="dm7confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm7.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -751,7 +745,6 @@ write.table(confects$table,file="dm8confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm8.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -806,7 +799,6 @@ write.table(confects$table,file="dm9confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm9.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -861,7 +853,6 @@ write.table(confects$table,file="dm10confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm10.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -942,7 +933,6 @@ write.table(confects$table,file="dmw1confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw1.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -997,7 +987,6 @@ write.table(confects$table,file="dmw2confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw2.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1052,7 +1041,6 @@ write.table(confects$table,file="dmw3confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw3.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1107,7 +1095,6 @@ write.table(confects$table,file="dmw4confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw4.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1162,7 +1149,6 @@ write.table(confects$table,file="dmw5confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw5.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1217,7 +1203,6 @@ write.table(confects$table,file="dmw6confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw6.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1272,7 +1257,6 @@ write.table(confects$table,file="dmw7confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw7.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1327,7 +1311,6 @@ write.table(confects$table,file="dmw8confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw8.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1382,7 +1365,6 @@ write.table(confects$table,file="dmw9confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw9.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
@@ -1437,7 +1419,6 @@ write.table(confects$table,file="dmw10confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw10.rds")
 
 # run mitch 1d
-y <- mitch_import(dge, DEtype="DESeq2",gt=gt)
 dgem <- dge[which(rownames(dge) %in% gt$coord),] 
 m <- mitch_import(dgem, DEtype="DESeq2",geneTable=gt)
 mr <- mitch_calc(m, genesets, priority="significance")
