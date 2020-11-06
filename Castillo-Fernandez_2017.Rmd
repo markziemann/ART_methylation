@@ -312,8 +312,22 @@ dim(y)
 dds <- DESeqDataSetFromMatrix(countData = y , colData = samplesheet, design = ~ sex + groups )
 res <- DESeq(dds)
 z <- results(res)
+
+
 vsd <- vst(dds, blind=FALSE)
 zz <-cbind(as.data.frame(z),assay(vsd))
+marker<- rownames(zz)
+neff<- 4/sum(1/table(samplesheet$groups))
+unmeth<- "T"
+meth<- "C"
+freq<- log2(zz$baseMean)
+ce<- zz$log2FoldChange
+se<- zz$lfcSE
+pval<- zz$pvalue
+data.frame("Row.names"=marker, "N"=neff, "unmeth"=unmeth, "meth"=meth, "CE"=ce, "SE"=se, "P.Value"=pval)
+
+rownames(zz)
+
 dge <- as.data.frame(zz[order(zz$pvalue),])
 dge[1:10,1:6]
 confects <- deseq2_confects(res)
@@ -337,8 +351,9 @@ myanno$gr_down
 write.table(dge,file="dm1.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm1confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm1.rds")
-
 ```
+
+
 
 ## Natural Vs GIFT
 
@@ -385,7 +400,6 @@ myanno$gr_down
 write.table(dge,file="dm2.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm2confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm2.rds")
-
 ```
 
 ## Natural Vs ICSI fresh
@@ -433,7 +447,6 @@ myanno$gr_down
 write.table(dge,file="dm3.tsv",sep="\t",quote=FALSE)
 write.table(confects$table,file="dm3confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dm3.rds")
-
 ```
 
 
@@ -1134,6 +1147,8 @@ write.table(confects$table,file="dmw7confects.tsv",sep="\t",quote=FALSE)
 saveRDS(myanno,file="dmw7.rds")
 
 ```
+
+
 
 ## ovarian stimulation vs ICSI frozen
 
