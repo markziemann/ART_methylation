@@ -95,7 +95,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_nat_vs_fh.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_nat_vs_fh.html",overwrite=FALSE)
 # Promoter
 dm <- nat_vs_fh$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -114,7 +114,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_nat_vs_fh.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_nat_vs_fh.html",overwrite=FALSE)
 rm(nat_vs_fh)
 
 ```
@@ -139,7 +139,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_fh_vs_fz.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_fh_vs_fz.html",overwrite=FALSE)
 # Promoter
 dm <- fh_vs_fz$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -158,7 +158,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_fh_vs_fz.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_fh_vs_fz.html",overwrite=FALSE)
 rm(fh_vs_fz)
 
 ```
@@ -183,7 +183,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_GIFT_vs_FX.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_GIFT_vs_FX.html",overwrite=FALSE)
 # Promoter
 dm <- GIFT_vs_FX$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -202,7 +202,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_GIFT_vs_FX.html",overwrite=TRUE)
+#mitch_report(mres,outfile="gmeapr_mitch_GIFT_vs_FX.html",overwrite=TRUE)
 rm(GIFT_vs_FX)
 
 ```
@@ -227,7 +227,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_nat_vs_ART.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_nat_vs_ART.html",overwrite=FALSE)
 # Promoter
 dm <- nat_vs_ART$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -246,7 +246,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_nat_vs_ART.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_nat_vs_ART.html",overwrite=FALSE)
 rm(nat_vs_ART)
 
 ```
@@ -272,7 +272,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_nat_vs_FX.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_nat_vs_FX.html",overwrite=FALSE)
 # Promoter
 dm <- nat_vs_FX$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -291,7 +291,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_nat_vs_FX.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_nat_vs_FX.html",overwrite=FALSE)
 rm(nat_vs_FX)
 
 ```
@@ -316,7 +316,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_nat_vs_fz.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_nat_vs_fz.html",overwrite=FALSE)
 # Promoter
 dm <- nat_vs_fz$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -335,7 +335,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_nat_vs_fz.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_nat_vs_fz.html",overwrite=FALSE)
 rm(nat_vs_fz)
 
 ```
@@ -360,7 +360,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeawg_mitch_nat_vs_GIFT.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeawg_mitch_nat_vs_GIFT.html",overwrite=FALSE)
 # Promoter
 dm <- nat_vs_GIFT$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
@@ -379,7 +379,7 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-mitch_report(mres,outfile="gmeapr_mitch_nat_vs_GIFT.html",overwrite=TRUE)
+mitch_report(mres,outfile="gmeapr_mitch_nat_vs_GIFT.html",overwrite=FALSE)
 rm(nat_vs_GIFT)
 
 ```
