@@ -213,16 +213,21 @@ make_dm_plots <- function(dm,name,mx,mxs,groups=groups,confects=confects,dmr,com
 }  
 
 make_forest_plots <- function(comp) {
-comp_data <- 
-  structure(list(
-    "mean"  = comp$up_comp$OR , 
-    "lower" = comp$up_comp$lowerCI ,
-    "upper" = comp$up_comp$upperCI ,
-    .Names = c("mean", "lower", "upper"), 
-    row.names = c(NA, -11L), 
-    class = "data.frame"))
-comp_data <- as.data.frame(comp_data[1:3],row.names = rownames(comp$up_comp) )
-forestplot(comp_data,title = "hypermethylated")
+
+  comp_data <- 
+    structure(list(
+      "mean"  = comp$up_comp$OR , 
+      "lower" = comp$up_comp$lowerCI ,
+      "upper" = comp$up_comp$upperCI ,
+      .Names = c("mean", "lower", "upper"), 
+      row.names = c(NA, -11L), 
+      class = "data.frame"))
+
+  comp_data <- as.data.frame(comp_data[1:3],row.names = rownames(comp$up_comp) )
+
+  forestplot(comp_data,title = "hypermethylated",
+    labeltext = as.list(rownames(comp_data)),
+    mean=mean,lower=lower,upper=upper)
 
 comp_data <- 
   structure(list(
@@ -232,8 +237,13 @@ comp_data <-
     .Names = c("mean", "lower", "upper"), 
     row.names = c(NA, -11L), 
     class = "data.frame"))
+
 comp_data <- as.data.frame(comp_data[1:3],row.names = rownames(comp$dn_comp) )
-forestplot(comp_data,title = "hypomethylated")
+
+  forestplot(comp_data,title = "hypomethylated",
+    labeltext = as.list(rownames(comp_data)),
+    mean=mean,lower=lower,upper=upper)
+
 }
 
 # this is a function which will perform differential methylation analysis
@@ -263,8 +273,10 @@ dm_analysis <- function(samplesheet,sex,groups,mx,name,myann,beta) {
       comp <- NULL
       cgi <- NULL
     }
-    make_dm_plots(dm = dm ,name=name , mx=beta,mxs=mxs, groups = groups, confects=confects,dmr = dmr, comp=comp, cgi=cgi)
-    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects, "dmr"= dmr, "comp"=comp, "cgi"=cgi, "fit"=fit.reduced)
+    make_dm_plots(dm = dm ,name=name , mx=beta,mxs=mxs, groups = groups, 
+      confects=confects,dmr = dmr, comp=comp, cgi=cgi)
+    dat <- list("dma"=dma, "dm_up"=dm_up, "dm_dn"=dm_dn, "confects"=confects,
+      "dmr"= dmr, "comp"=comp, "cgi"=cgi, "fit"=fit.reduced)
     return(dat)
 }
 
