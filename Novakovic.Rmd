@@ -24,7 +24,6 @@ promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 
 ```
 
-
 ## Introduction
   
 This report is the reanalysis of first analysed DNA methylation data by
@@ -55,7 +54,10 @@ gse <- getGEO(filename=SERIES_MATRIX)
 baseDir <- "."
 sample_metadata <- pData(phenoData(gse))
 targets <- sample_metadata
-mybase <- unique(gsub("_Red.idat.gz" ,"",  gsub("_Grn.idat.gz", "" ,list.files(".",pattern = "GSM",recursive = TRUE))))
+
+files <- list.files(WORKING_DIR,pattern = "GSM",recursive = TRUE)
+mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,files)))
+mybase <- paste(WORKING_DIR,"/",mybase,sep="")
 targets$Basename <- mybase
 head(targets)
 rgSet <- read.metharray.exp(targets = targets)
@@ -166,22 +168,32 @@ save.image("Novakovic.Rdata")
 
 ```{r,dm1}
 
-targets$Basename <- gsub("IDAT/","",targets$Basename)  
+# sex chromosomes excluded
+beta <- beta_flt
+Mval <- Mval_flt
+colnames(beta) <- sapply(strsplit(colnames(beta),"_"),"[[",1)
+colnames(Mval) <- sapply(strsplit(colnames(Mval),"_"),"[[",1)
+
+#targets$Basename <- gsub("IDAT/","",targets$Basename)  
 birth<-targets[which(targets$`time_of_collection`=="birth"),]
+birth$Basename <- sapply(strsplit(birth$Basename,"/"),"[[",2)
+birth$Basename <- sapply(strsplit(birth$Basename,"_"),"[[",1)
+
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Fresh embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Fresh embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
+dim(Mvals)
+dim(betas)
 
 top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
-sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
-myann=myann ,beta= betas) 
+  sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fh",
+  myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
 head(top_nat_vs_fh$dmr,10)
 
 # Allele
-
 top_nat_vs_fh$dma$unmeth <- "T"
 top_nat_vs_fh$dma$meth <- "C"
 top_nat_vs_fh$fit$SE <- sqrt(top_nat_vs_fh$fit$s2.post) * top_nat_vs_fh$fit$stdev.unscaled
@@ -210,7 +222,8 @@ Neff = 4/sum(1/table(groups))
 top_nat_vs_fh_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_fh_metal, file="novakovic_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
+write.table(top_nat_vs_fh_metal, file="novakovic_top_nat_vs_fh_metal.tsv",
+  sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
@@ -228,12 +241,13 @@ saveRDS(top_nat_vs_fh,file="top_nat_vs_fh.rds")
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="Frozen embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","Frozen embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
-sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
-myann=myann ,beta= betas)
+  sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_fz",
+  myann=myann ,beta= betas)
+
 head(top_nat_vs_fz$dma,10)
 head(top_nat_vs_fz$dmr,10)
 
@@ -266,7 +280,8 @@ Neff = 4/sum(1/table(groups))
 top_nat_vs_fz_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_fz_metal, file="novakovic_top_nat_vs_fz_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
+write.table(top_nat_vs_fz_metal, file="novakovic_top_nat_vs_fz_metal.tsv",
+  sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
@@ -283,8 +298,8 @@ saveRDS(top_nat_vs_fz,file="top_nat_vs_fz.rds")
 samplesheet<-subset(birth,art_subtype_ch1=="non-ART"|art_subtype_ch1=="GIFT")
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","GIFT"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_nat_vs_GIFT <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
@@ -321,7 +336,8 @@ Neff = 4/sum(1/table(groups))
 top_nat_vs_GIFT_metal$N <- Neff
 
 # Output for Meta-analysis
-write.table(top_nat_vs_GIFT_metal, file="novakovic_top_nat_vs_GIFT_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
+write.table(top_nat_vs_GIFT_metal, file="novakovic_top_nat_vs_GIFT_metal.tsv",
+  sep="\t",quote=FALSE, row.names = FALSE)
 
 head(top_nat_vs_GIFT$dma)
 head(top_nat_vs_GIFT$dmr)
@@ -341,12 +357,13 @@ samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
 groups <- factor(samplesheet$art_subtype,levels=c("non-ART","FX"))
 
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
-sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
-myann=myann ,beta= betas)
+  sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_FX",
+  myann=myann ,beta= betas)
+
 head(top_nat_vs_FX$dma,10)
 head(top_nat_vs_FX$dmr,10)
 
@@ -398,8 +415,8 @@ samplesheet$art_subtype <- gsub("Fresh embryo","FX",samplesheet$art_subtype)
 samplesheet$art_subtype <- gsub("Frozen embryo","FX",samplesheet$art_subtype)
 groups <- factor(samplesheet$art_subtype,levels=c("GIFT","FX"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_GIFT_vs_FX <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
@@ -454,8 +471,8 @@ saveRDS(top_GIFT_vs_FX,file="top_GIFT_vs_FX.rds")
 samplesheet<-birth
 groups <- factor(samplesheet$art_status,levels=c("non-ART","ART"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_nat_vs_ART <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
@@ -511,8 +528,8 @@ saveRDS(top_nat_vs_ART,file="top_nat_vs_ART.rds")
 samplesheet <- subset(birth,art_subtype_ch1=="Fresh embryo"|art_subtype_ch1=="Frozen embryo")
 groups <- factor(samplesheet$art_subtype,levels=c("Fresh embryo","Frozen embryo"))
 sex <- factor(samplesheet$sex,levels=c("M","F"))
-Mvals<-Mval[,colnames(Mval)%in% gsub("IDAT/","",birth$Basename)]
-betas<-beta[,colnames(beta)%in% gsub("IDAT/","",birth$Basename)]
+Mvals<-Mval[,colnames(Mval)%in% samplesheet$Basename]
+betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 
 top_fh_vs_fz <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
