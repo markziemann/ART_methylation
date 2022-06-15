@@ -229,7 +229,7 @@ head(top_nat_vs_fh$dma)
 head(top_nat_vs_fh$dmr)
 head(top_nat_vs_fh_metal)
 
-saveRDS(top_nat_vs_fh,file="top_nat_vs_fh.rds")
+saveRDS(top_nat_vs_fh,file="novakovic_nat_vs_fh.rds")
 
 ```
 
@@ -287,7 +287,7 @@ head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
 head(top_nat_vs_fz_metal)
 
-saveRDS(top_nat_vs_fz,file="top_nat_vs_fz.rds")
+saveRDS(top_nat_vs_fz,file="novakovic_nat_vs_fz.rds")
 
 ```
 
@@ -343,7 +343,7 @@ head(top_nat_vs_GIFT$dma)
 head(top_nat_vs_GIFT$dmr)
 head(top_nat_vs_GIFT_metal)
 
-saveRDS(top_nat_vs_GIFT,file="top_nat_vs_GIFT.rds")
+saveRDS(top_nat_vs_GIFT,file="novakovic_nat_vs_GIFT.rds")
 
 ```
 
@@ -402,7 +402,7 @@ head(top_nat_vs_FX$dma)
 head(top_nat_vs_FX$dmr)
 head(top_nat_vs_FX_metal)
 
-saveRDS(top_nat_vs_FX,file="top_nat_vs_FX.rds")
+saveRDS(top_nat_vs_FX,file="novakovic_nat_vs_FX.rds")
 
 ```
 
@@ -460,7 +460,7 @@ head(top_GIFT_vs_FX$dma)
 head(top_GIFT_vs_FX$dmr)
 head(top_GIFT_vs_FX_metal)
 
-saveRDS(top_GIFT_vs_FX,file="top_GIFT_vs_FX.rds")
+saveRDS(top_GIFT_vs_FX,file="novakovic_GIFT_vs_FX.rds")
 
 ```
 
@@ -516,7 +516,7 @@ head(top_nat_vs_ART$dma)
 head(top_nat_vs_ART$dmr)
 head(top_nat_vs_ART_metal)
 
-saveRDS(top_nat_vs_ART,file="top_nat_vs_ART.rds")
+saveRDS(top_nat_vs_ART,file="novakovic_nat_vs_ART.rds")
 
 ```
 
@@ -572,7 +572,7 @@ head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
 head(top_fh_vs_fz_metal)
 
-saveRDS(top_fh_vs_fz,file="top_fh_vs_fz.rds")
+saveRDS(top_fh_vs_fz,file="novakovic_fh_vs_fz.rds")
 
 ```
 
