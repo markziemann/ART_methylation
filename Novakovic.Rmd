@@ -64,7 +64,7 @@ targets$Basename <- mybase
 head(targets)
 
 # filter time of birth as were not interested in follow up samples
-targets <- subset(targets,time_of_collection_ch1=="birth")
+targets <- subset(targets,`time of collection:ch1`=="birth")
 
 rgSet <- read.metharray.exp(targets = targets)
 rgSet
