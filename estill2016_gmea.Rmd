@@ -1,5 +1,5 @@
 ---
-title: "Novakovic: Gene Methylation Enrichment Analysis"
+title: "Estill: Gene Methylation Enrichment Analysis"
 author: "IVF meth meta-analysis group"
 date: "`r Sys.Date()`"
 output:
@@ -50,17 +50,16 @@ promoters <- grep("Prom",myann$Regulatory_Feature_Group)
 
 ```
 
-## Load Novakovic data
+## Load Estill data
 
 ```{r,load}
 
-nat_vs_fh <- readRDS("novakovic_nat_vs_fh.rds")
-fh_vs_fz <- readRDS("novakovic_fh_vs_fz.rds")
-GIFT_vs_FX <- readRDS("novakovic_GIFT_vs_FX.rds")
-nat_vs_ART <- readRDS("novakovic_nat_vs_ART.rds")
-nat_vs_FX <- readRDS("novakovic_nat_vs_FX.rds")
-nat_vs_fz <- readRDS("novakovic_nat_vs_fz.rds")
-nat_vs_GIFT <- readRDS("novakovic_nat_vs_GIFT.rds")
+nat_vs_fh <- readRDS("estill_nat_vs_fh.rds")
+fh_vs_fz <- readRDS("estill_fh_vs_fz.rds")
+nat_vs_fx <- readRDS("estill_nat_vs_fx.rds")
+nat_vs_fz <- readRDS("estill_nat_vs_fz.rds")
+iui_vs_fx <- readRDS("estill_iui_vs_fx.rds")
+nat_vs_iui <- readRDS("estill_nat_vs_iui.rds")
 
 if ( ! file.exists("ReactomePathways.gmt") ) {
   download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip",
@@ -80,11 +79,11 @@ length(genesets)
 dm <- nat_vs_fh$dma
 head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
 dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc() 
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_nat_vs_fh.tsv")
+write.table(res,file="estill_gmeawg_nat_vs_fh.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -99,11 +98,11 @@ dm <- nat_vs_fh$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
 dm <- dm[,c("UCSC_RefGene_Name","t")]
 head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]] 
-write.table(res ,file="novakovic_gmeapr_nat_vs_fh.tsv")
+write.table(res ,file="estill_gmeapr_nat_vs_fh.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -124,11 +123,11 @@ rm(nat_vs_fh)
 dm <- fh_vs_fz$dma
 head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
 dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_fh_vs_fz.tsv")
+write.table(res,file="estill_gmeawg_fh_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -143,11 +142,11 @@ dm <- fh_vs_fz$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
 dm <- dm[,c("UCSC_RefGene_Name","t")]
 head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_fh_vs_fz.tsv")
+write.table(res ,file="estill_gmeapr_fh_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -161,18 +160,18 @@ rm(fh_vs_fz)
 
 ```
 
-## GIFT_vs_FX
+## nat vs fx
 
-```{r,GIFT_vs_FX}
+```{r,nat_vs_fx}
 
-dm <- GIFT_vs_FX$dma
+dm <- nat_vs_fx$dma
 head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
 dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_GIFT_vs_FX.tsv")
+write.table(res,file="estill_gmeawg_nat_vs_fx.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -181,17 +180,17 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeawg_mitch_GIFT_vs_FX.html",overwrite=FALSE)
+#mitch_report(mres,outfile="gmeawg_mitch_nat_vs_fx.html",overwrite=FALSE)
 # Promoter
-dm <- GIFT_vs_FX$dma
+dm <- nat_vs_fx$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
 dm <- dm[,c("UCSC_RefGene_Name","t")]
 head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_GIFT_vs_FX.tsv")
+write.table(res ,file="estill_gmeapr_nat_vs_fx.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -200,96 +199,8 @@ rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeapr_mitch_GIFT_vs_FX.html",overwrite=TRUE)
-rm(GIFT_vs_FX)
-
-```
-
-## nat vs ART
-
-```{r,nat_vs_ART}
-
-dm <- nat_vs_ART$dma
-head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
-dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
-tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
-df <- gmea[[1]]
-res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_nat_vs_ART.tsv")
-head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
-gmea_volc(res)
-gmea_barplot(res)
-dmscore <- data.frame( res$median * res$sig)
-rownames(dmscore) <- rownames(res)
-colnames(dmscore) <- "metric"
-mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
-head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeawg_mitch_nat_vs_ART.html",overwrite=FALSE)
-# Promoter
-dm <- nat_vs_ART$dma
-dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
-dm <- dm[,c("UCSC_RefGene_Name","t")]
-head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
-tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
-df <- gmea[[1]]
-res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_nat_vs_ART.tsv")
-head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
-gmea_volc(res)
-gmea_barplot(res)
-dmscore <- data.frame( res$median * res$sig)
-rownames(dmscore) <- rownames(res)
-colnames(dmscore) <- "metric"
-mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
-head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeapr_mitch_nat_vs_ART.html",overwrite=FALSE)
-rm(nat_vs_ART)
-
-```
-
-## nat vs FX
-
-```{r,nat_vs_FX}
-
-dm <- nat_vs_FX$dma
-head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
-dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
-tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
-df <- gmea[[1]]
-res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_nat_vs_FX.tsv")
-head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
-gmea_volc(res)
-gmea_barplot(res)
-dmscore <- data.frame( res$median * res$sig)
-rownames(dmscore) <- rownames(res)
-colnames(dmscore) <- "metric"
-mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
-head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeawg_mitch_nat_vs_FX.html",overwrite=FALSE)
-# Promoter
-dm <- nat_vs_FX$dma
-dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
-dm <- dm[,c("UCSC_RefGene_Name","t")]
-head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
-tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
-df <- gmea[[1]]
-res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_nat_vs_FX.tsv")
-head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
-gmea_volc(res)
-gmea_barplot(res)
-dmscore <- data.frame( res$median * res$sig)
-rownames(dmscore) <- rownames(res)
-colnames(dmscore) <- "metric"
-mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
-head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
-#mitch_report(mres,outfile="gmeapr_mitch_nat_vs_FX.html",overwrite=FALSE)
-rm(nat_vs_FX)
+#mitch_report(mres,outfile="gmeapr_mitch_nat_vs_fx.html",overwrite=FALSE)
+rm(nat_vs_fx)
 
 ```
 
@@ -300,11 +211,11 @@ rm(nat_vs_FX)
 dm <- nat_vs_fz$dma
 head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
 dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_nat_vs_fz.tsv")
+write.table(res,file="estill_gmeawg_nat_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -319,11 +230,11 @@ dm <- nat_vs_fz$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
 dm <- dm[,c("UCSC_RefGene_Name","t")]
 head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_nat_vs_fz.tsv")
+write.table(res ,file="estill_gmeapr_nat_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -337,18 +248,18 @@ rm(nat_vs_fz)
 
 ```
 
-## nat vs GIFT
+## nat_vs_iui
 
-```{r,nat_vs_GIFT}
+```{r,nat_vs_iui}
 
-dm <- nat_vs_GIFT$dma
+dm <- nat_vs_iui$dma
 head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
 dm <- dm[,c("UCSC_RefGene_Name","t")]
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res,file="novakovic_gmeawg_nat_vs_GIFT.tsv")
+write.table(res,file="estill_gmeawg_nat_vs_iui.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -359,15 +270,15 @@ mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
 head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
 #mitch_report(mres,outfile="gmeawg_mitch_nat_vs_GIFT.html",overwrite=FALSE)
 # Promoter
-dm <- nat_vs_GIFT$dma
+dm <- nat_vs_iui$dma
 dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
 dm <- dm[,c("UCSC_RefGene_Name","t")]
 head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
-hist(dm$t,breaks=seq(from=-10,to=10,by=1))
+hist(dm$t)
 tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
 df <- gmea[[1]]
 res <- gmea[[2]]
-write.table(res ,file="novakovic_gmeapr_nat_vs_GIFT.tsv")
+write.table(res ,file="estill_gmeapr_nat_vs_iui.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
@@ -377,7 +288,52 @@ colnames(dmscore) <- "metric"
 mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
 head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
 #mitch_report(mres,outfile="gmeapr_mitch_nat_vs_GIFT.html",overwrite=FALSE)
-rm(nat_vs_GIFT)
+rm(nat_vs_iui)
+
+```
+
+
+## iui_vs_fx
+
+```{r,iui_vs_fx}
+
+dm <- iui_vs_fx$dma
+head(dm,50) %>% kbl(caption = "Top significant genes with limma") %>% kable_paper("hover", full_width = F)
+dm <- dm[,c("UCSC_RefGene_Name","t")]
+hist(dm$t)
+tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
+df <- gmea[[1]]
+res <- gmea[[2]]
+write.table(res,file="estill_gmeawg_iui_vs_fx.tsv")
+head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
+gmea_volc(res)
+gmea_barplot(res)
+dmscore <- data.frame( res$median * res$sig)
+rownames(dmscore) <- rownames(res)
+colnames(dmscore) <- "metric"
+mres <- mitch_calc(x=dmscore, genesets=genesets, priority="effect")
+head(mres$enrichment_result,20) %>% kbl(caption = "Top enriched gene sets with GMEA-Mitch") %>% kable_paper("hover", full_width = F)
+#mitch_report(mres,outfile="gmeawg_mitch_nat_vs_GIFT.html",overwrite=FALSE)
+# Promoter
+dm <- iui_vs_fx$dma
+dm <- dm[grep("Promoter_Associated",dm$Regulatory_Feature_Group),]
+dm <- dm[,c("UCSC_RefGene_Name","t")]
+head(dm,50) %>% kbl(caption = "Top significant promoters with limma") %>% kable_paper("hover", full_width = F)
+hist(dm$t)
+tic() ; gmea <- calc_sc(dm) ; time2 <- toc()
+df <- gmea[[1]]
+res <- gmea[[2]]
+write.table(res ,file="estill_gmeapr_iui_vs_fx.tsv")
+head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
+gmea_volc(res)
+gmea_barplot(res)
+dmscore <- data.frame( res$median * res$sig)
+rownames(dmscore) <- rownames(res)
+colnames(dmscore) <- "metric"
+mres <- mitch_calc(x=dmscore, genesets=genesets,priority="effect")
+head(mres$enrichment_result,20) %>%  kbl(caption = "Top enriched gene sets with GMEA-Mitch (promoter only)") %>% kable_paper("hover", full_width = F)
+#mitch_report(mres,outfile="gmeapr_mitch_nat_vs_GIFT.html",overwrite=FALSE)
+rm(iui_vs_fx)
 
 ```
 

@@ -5,6 +5,8 @@ date: "10/1/2020"
 output:   
   html_document:
     toc: true
+    fig_width: 7
+    fig_height: 7
 theme: cosmo
 ---
 

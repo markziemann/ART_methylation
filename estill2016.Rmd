@@ -5,6 +5,8 @@ date: "`r Sys.Date()`"
 output:
   html_document:
     toc: true
+    fig_width: 7
+    fig_height: 7
 theme: cosmo
 ---
 
@@ -365,6 +367,7 @@ head(top_nat_vs_fh$dma)
 top_nat_vs_fh$comp
 top_nat_vs_fh$cgi
 write.table(top_nat_vs_fh$dma,file="estill_nat_vs_fh.tsv",sep="\t",quote=FALSE)
+saveRDS(top_nat_vs_fh,file="estill_nat_vs_fh.rds")
 
 # Allele
 top_nat_vs_fh$dma$unmeth <- "T"
@@ -417,7 +420,6 @@ samplesheet$Basename <- sapply(strsplit(samplesheet$Basename, "/"), "[[", 3)
 groups <- factor(samplesheet$art,levels=c("NAT","FZ"))
 sex <- factor(samplesheet$sex,levels=c("Male","Female"))
 
-
 top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
     sex=sex,groups=groups,mx=Mval_flt,name="top_nat_vs_fz",
     myann=myann, beta=beta_flt)
@@ -426,6 +428,7 @@ head(top_nat_vs_fz$dma)
 head(top_nat_vs_fz$dmr)
 top_nat_vs_fz$comp
 write.table(top_nat_vs_fz$dma,file="estill_nat_vs_fz.tsv",sep="\t",quote=FALSE)
+saveRDS(top_nat_vs_fz,file="estill_nat_vs_fz.rds")
 
 # Allele
 top_nat_vs_fz$dma$unmeth <- "T"
@@ -486,6 +489,7 @@ head(top_nat_vs_iui$dma)
 head(top_nat_vs_iui$dmr)
 top_nat_vs_iui$comp
 write.table(top_nat_vs_iui$dma,file="estill_nat_vs_iui.tsv",sep="\t",quote=FALSE)
+saveRDS(top_nat_vs_iui,file="estill_nat_vs_iui.rds")
 
 # Allele
 top_nat_vs_iui$dma$unmeth <- "T"
@@ -546,6 +550,7 @@ head(top_fh_vs_fz$dma)
 head(top_fh_vs_fz$dmr)
 top_fh_vs_fz$comp
 write.table(top_fh_vs_fz$dma,file="estill_fh_vs_fz.tsv",sep="\t",quote=FALSE)
+saveRDS(top_fh_vs_fz,file="estill_fh_vs_fz.rds")
 
 # Allele
 top_fh_vs_fz$dma$unmeth <- "T"
@@ -611,6 +616,7 @@ head(top_nat_vs_fx$dma)
 head(top_nat_vs_fx$dmr)
 top_nat_vs_fx$comp
 write.table(top_nat_vs_fx$dma,file="estill_nat_vs_fx.tsv",sep="\t",quote=FALSE)
+saveRDS(top_nat_vs_fx,file="estill_nat_vs_fx.rds")
 
 # Allele
 top_nat_vs_fx$dma$unmeth <- "T"
@@ -679,6 +685,7 @@ head(top_iui_vs_fx$dma)
 head(top_iui_vs_fx$dmr)
 top_iui_vs_fx$comp
 write.table(top_iui_vs_fx$dma,file="estill_iui_vs_fx.tsv",sep="\t",quote=FALSE)
+saveRDS(top_iui_vs_fx,file="estill_iui_vs_fx.rds")
 
 # Allele
 top_iui_vs_fx$dma$unmeth <- "T"

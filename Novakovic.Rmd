@@ -4,6 +4,8 @@ author: "The methylation in ART meta-analysis group"
 date: "`r Sys.Date()`"
 output:
   html_document:
+    fig_width: 7
+    fig_height: 7
   toc: true
 theme: cosmo
 ---
@@ -60,6 +62,10 @@ mybase <- unique(gsub("_Red.idat.gz" ,"", gsub("_Grn.idat.gz", "" ,files)))
 mybase <- paste(WORKING_DIR,"/",mybase,sep="")
 targets$Basename <- mybase
 head(targets)
+
+# filter time of birth as were not interested in follow up samples
+targets <- subset(targets,time_of_collection_ch1=="birth")
+
 rgSet <- read.metharray.exp(targets = targets)
 rgSet
 
@@ -136,6 +142,8 @@ plot(1,axes = FALSE,xlab="",ylab="",main="MDS by ART type")
 legend("center",legend=levels(sample_groups),pch=16,cex=1.2,col=colour_palette)
 mydist <- plotMDS(Mval, labels=targets$Sample_Name,col=colours,main="sex chromosomes included")
 mydist_flt <- plotMDS(Mval_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
+colnames(mydist_flt@.Data[[5]])  <- sapply(strsplit(colnames(mydist_flt@.Data[[5]]),"_"),"[[",1)
+plotMDS(mydist_flt, labels=targets$Sample_Name,col=colours,main="sex chromosomes excluded")
 
 ```
 

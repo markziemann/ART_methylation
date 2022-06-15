@@ -4,6 +4,8 @@ author: "The methylation in ART meta-analysis group"
 date: "`r Sys.Date()`"
 output:
   html_document:
+    fig_width: 7
+    fig_height: 7
     toc: true
 theme: cosmo
 ---
