@@ -200,6 +200,10 @@ top_nat_vs_fh <- dm_analysis(samplesheet=samplesheet,
   myann=myann ,beta= betas) 
 head(top_nat_vs_fh$dma,10)
 head(top_nat_vs_fh$dmr,10)
+top_nat_vs_fh$comp
+top_nat_vs_fh$cgi
+names(top_nat_vs_fh)
+head(top_nat_vs_fh$confects$table$name)
 
 # Allele
 top_nat_vs_fh$dma$unmeth <- "T"
@@ -258,6 +262,10 @@ top_nat_vs_fz <- dm_analysis(samplesheet=samplesheet,
 
 head(top_nat_vs_fz$dma,10)
 head(top_nat_vs_fz$dmr,10)
+top_nat_vs_fz$comp
+top_nat_vs_fz$cgi
+names(top_nat_vs_fz)
+head(top_nat_vs_fz$confects$table$name)
 
 # Allele
 top_nat_vs_fz$dma$unmeth <- "T"
@@ -312,8 +320,14 @@ betas<-beta[,colnames(beta)%in% samplesheet$Basename]
 top_nat_vs_GIFT <- dm_analysis(samplesheet=samplesheet,
 sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_GIFT",
 myann=myann ,beta= betas)
+
 head(top_nat_vs_GIFT$dma,10)
 head(top_nat_vs_GIFT$dmr,10)
+
+top_nat_vs_GIFT$comp
+top_nat_vs_GIFT$cgi
+names(top_nat_vs_GIFT)
+head(top_nat_vs_GIFT$confects$table$name)
 
 # Allele
 top_nat_vs_GIFT$dma$unmeth <- "T"
@@ -375,6 +389,11 @@ top_nat_vs_FX <- dm_analysis(samplesheet=samplesheet,
 head(top_nat_vs_FX$dma,10)
 head(top_nat_vs_FX$dmr,10)
 
+top_nat_vs_FX$comp
+top_nat_vs_FX$cgi
+names(top_nat_vs_FX)
+head(top_nat_vs_FX$confects$table$name)
+
 # Allele
 top_nat_vs_FX$dma$unmeth <- "T"
 top_nat_vs_FX$dma$meth <- "C"
@@ -431,6 +450,11 @@ sex=sex,groups=groups,mx=Mvals,name="top_GIFT_vs_FX",
 myann=myann ,beta= betas)
 head(top_GIFT_vs_FX$dma,10)
 head(top_GIFT_vs_FX$dmr,10)
+top_GIFT_vs_FX$comp
+top_GIFT_vs_FX$cgi
+names(top_GIFT_vs_FX)
+head(top_GIFT_vs_FX$confects$table$name)
+
 write.table(top_GIFT_vs_FX$dma,file="novakovic_top_GIFT_vs_FX.tsv",sep="\t",quote=FALSE)
 
 # Allele
@@ -487,6 +511,11 @@ sex=sex,groups=groups,mx=Mvals,name="top_nat_vs_ART",
 myann=myann ,beta= betas)
 head(top_nat_vs_ART$dma,10)
 head(top_nat_vs_ART$dmr,10)
+top_nat_vs_ART$comp
+top_nat_vs_ART$cgi
+names(top_nat_vs_ART)
+head(top_nat_vs_ART$confects$table$name)
+
 write.table(top_nat_vs_ART$dma,file="novakovic_top_nat_vs_ART.tsv",sep="\t",quote=FALSE)
 
 # Allele
@@ -544,6 +573,10 @@ sex=sex,groups=groups,mx=Mvals,name="top_fh_vs_fz",
 myann=myann ,beta= betas)
 head(top_fh_vs_fz$dma,10)
 head(top_fh_vs_fz$dmr,10)
+top_fh_vs_fz$comp
+top_fh_vs_fz$cgi
+names(top_fh_vs_fz)
+head(top_fh_vs_fz$confects$table$name)
 
 # Allele
 top_fh_vs_fz$dma$unmeth <- "T"
