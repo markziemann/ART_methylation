@@ -1,0 +1,95 @@
+---
+title: "Comparison of GMEA+Mitch results of Estill and Novakovic"
+author: "The methylation in ART meta-analysis group"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    fig_width: 7
+    fig_height: 7
+  toc: true
+theme: cosmo
+---
+
+```{r,packages}
+
+source("meth_functions.R")
+
+```
+
+## Introduction
+
+The purpose of this is to compare the GMEA results of Estill and Novakovic studies.
+
+estill_gmeapr_nat_vs_fh.tsv  novakovic_gmeapr_nat_vs_fh.tsv
+estill_gmeawg_nat_vs_fh.tsv  novakovic_gmeawg_nat_vs_fh.tsv
+
+```{r,load}
+
+eswg <- read.table("estill_gmeawg_nat_vs_fh.tsv")
+nowg <- read.table("novakovic_gmeawg_nat_vs_fh.tsv")
+
+head(eswg)
+head(nowg)
+
+eswg$metric <- sign(eswg$median) * eswg$sig
+nowg$metric <- sign(nowg$median) * nowg$sig
+
+x <- merge(eswg,nowg,by=0)
+x <- x[,c("Row.names","metric.x","metric.y")]
+rownames(x) <- x[,1]
+x[,1] = NULL
+colnames(x) <- c("estill","novakovic")
+
+mylm <- lm(x[,1] ~ x[,2])
+plot(x,xlim=c(-25,10),main="GMEA score")
+grid()
+abline(mylm,col="red",lty=2)
+
+abline(h=-5,col="blue")
+abline(v=-5,col="blue")
+
+# spearman
+cor(x[,1],x[,2],method="s")
+
+# pearson
+cor(x[,1],x[,2],method="p")
+
+```
+
+
+```{r,sorting}
+
+subset(x, estill < -5 & novakovic < -5)
+
+x2 <- subset(x, estill < -5 & novakovic < -5)
+
+x2 <- x2[order(rowMeans(x2)),]
+
+x2 %>%  kbl(caption = "Top genes detected with GMEA") %>% kable_paper("hover", full_width = F)
+
+```
+
+
+```{r,mitch}
+
+head(x2)
+
+library("mitch")
+genesets <- gmt_import("ReactomePathways.gmt")
+
+res <- mitch_calc(x, genesets, priority="effect")
+
+head(res$enrichment_result,20) %>%
+    kbl(caption = "Top genes detected with GMEA") %>%
+    kable_paper("hover", full_width = F)
+
+mitch_report(res,outfile="gmea_mitch.pdf")
+
+```
+
+
+```{r,session}
+
+sessionInfo()
+
+```
