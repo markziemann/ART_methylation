@@ -88,6 +88,8 @@ write.table(res,file="novakovic_gmeawg_nat_vs_fh.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -107,6 +109,8 @@ write.table(res ,file="novakovic_gmeapr_nat_vs_fh.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -132,6 +136,8 @@ write.table(res,file="novakovic_gmeawg_fh_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -151,6 +157,8 @@ write.table(res ,file="novakovic_gmeapr_fh_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -176,6 +184,8 @@ write.table(res,file="novakovic_gmeawg_GIFT_vs_FX.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -195,6 +205,8 @@ write.table(res ,file="novakovic_gmeapr_GIFT_vs_FX.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -220,6 +232,8 @@ write.table(res,file="novakovic_gmeawg_nat_vs_ART.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -239,6 +253,8 @@ write.table(res ,file="novakovic_gmeapr_nat_vs_ART.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -264,6 +280,8 @@ write.table(res,file="novakovic_gmeawg_nat_vs_FX.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -283,6 +301,8 @@ write.table(res ,file="novakovic_gmeapr_nat_vs_FX.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -308,6 +328,8 @@ write.table(res,file="novakovic_gmeawg_nat_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -327,6 +349,8 @@ write.table(res ,file="novakovic_gmeapr_nat_vs_fz.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -352,6 +376,8 @@ write.table(res,file="novakovic_gmeawg_nat_vs_GIFT.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
@@ -371,6 +397,8 @@ write.table(res ,file="novakovic_gmeapr_nat_vs_GIFT.tsv")
 head(res,50) %>% kbl(caption = "Top significant genes with GMEA") %>% kable_paper("hover", full_width = F)
 gmea_volc(res)
 gmea_barplot(res)
+gmea_probe_bias(res)
+
 dmscore <- data.frame( res$median * res$sig)
 rownames(dmscore) <- rownames(res)
 colnames(dmscore) <- "metric"
