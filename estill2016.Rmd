@@ -70,9 +70,39 @@ eventually be shoved into another Rscript or package but can stay here for now.
 source("meth_functions.R")
 
 # Annotation
-ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-myann <- data.frame(ann450k[,c("UCSC_RefGene_Name","Regulatory_Feature_Group","Islands_Name","Relation_to_Island")])
+anno <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+anno <- data.frame(anno[,c("UCSC_RefGene_Name","Regulatory_Feature_Group",
+  "Islands_Name","Relation_to_Island")])
 promoters <- grep("Prom",myann$Regulatory_Feature_Group)
+
+```
+
+## Probe sets
+
+For each gene, extract out the probes.
+
+```{r,probesets}
+
+promoters <- grep("Prom",anno$Regulatory_Feature_Group)
+promoters <- anno[promoters,]
+gp <- anno[,"UCSC_RefGene_Name",drop=FALSE]
+gp2 <- strsplit(gp$UCSC_RefGene_Name,";")
+names(gp2) <- rownames(gp)
+sets <- split(rep(names(gp2), lengths(gp2)), unlist(gp2))
+summary(unlist(lapply(sets,length)))
+
+```
+
+## Gene sets
+
+```{r,genesets0, fig.width = 8 ,fig.height = 8}
+
+library("mitch")
+# gene sets
+#download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+#    destfile="ReactomePathways.gmt.zip")
+#unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+genesets <- gmt_import("ReactomePathways.gmt")
 
 ```
 
@@ -184,7 +214,7 @@ relative contributions of PCs very much.
 
 ```{r,scree,fig.cap="Figure 2. Screeplot shows contribution of top principal components to the overall variation in the experiment."}
 
-par(mfrow=c(2,1))  
+par(mfrow=c(2,1))
 myscree(Mval,main="incl sex chr")
 myscree(Mval_flt,main="excl sex chr")
 
@@ -300,7 +330,7 @@ IUI, a process that involves in utero injection of sperm.
 * __NAT (43) vs FH+FZ (76)__: if freezing results in only a small effect, then these groups can be 
 lumped together and provide more power to determine subtle effects of IVF.
 
-* __IUI (18) vs FH+FZ (76)__: It will be interesting to see whether the process of extracting eggs, culturing 
+* __IUI (18) vs FH+FZ (76)__: It will be interesting to see whether the process of extracting eggs, culturing
 and fertilising in vitro has an effect that is separate to IUI.
 
 The differential analysis is centred around limma to identify differentially methylated probes. 
@@ -329,7 +359,7 @@ In the comparison of NAT and FH samples there were ~150k probes with differentia
 (FDR<0.05), with ~120k loss of methylation and ~30k with increased methylation.
 
 
-```{r,nat_vs_fh_incl, fig.width = 8 ,fig.height = 8}
+```{r,nat_vs_fh_incl, fig.width = 8 ,fig.height = 8 }
 
 # include sex chromosomes
 samplesheet <- subset(targets,art=="NAT" | art=="FH")
@@ -404,9 +434,116 @@ top_nat_vs_fh_metal$N <- Neff
 
 # Output for Meta-analysis
 dir.create("NATvsFH")
-write.table(top_nat_vs_fh_metal, file="NATvsFH/estill_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE) 
+write.table(top_nat_vs_fh_metal, file="NATvsFH/estill_top_nat_vs_fh_metal.tsv",sep="\t",quote=FALSE, row.names = FALSE)
 
 ```
+
+Save point.
+
+GMEA enrichment analysis of probe sets belonging to genes.
+
+```{r,nat_vs_fh_excl_gmea}
+
+save.image("estill.Rdata")
+
+design <- model.matrix(~ sex + groups)
+mx <- Mval_flt
+mxs <- mx[,which( colnames(mx) %in% samplesheet$Basename )]
+
+tic()
+nat_vs_fh_gmea <- main(mval=mxs,design=design,sets=sets,cores=16 )
+toc()
+
+gmea_boxplot(res=nat_vs_fh_gmea,sets=sets)
+volcano_plot(res=nat_vs_fh_gmea)
+probe_bias(res=nat_vs_fh_gmea)
+
+```
+
+Let's take a look at elapsed time.
+
+| threads | elapsed time (s) |
+| --- | ---|
+| 2 | 657 |
+| 4 | 358 |
+| 8 | 244 |
+| 12 | 199 |
+| 16 | 177 |
+
+```{r,elapsedtime}
+
+cores <- c(2,4,8,12,16)
+elapsed_time <- c(657,358,244,199,177)
+plot(cores,elapsed_time,ylim=c(0,max(elapsed_time)),
+  type="b",ylab="sec",xlab="threads",
+  main="runtime on 3 GHz chip")
+grid()
+
+```
+
+Run preranked camera.
+
+```{r,nat_vs_fh_excl_camera}
+
+nat_vs_fh_gmea[[1]] <- subset(nat_vs_fh_gmea[[1]],nprobes>0)
+stat <- nat_vs_fh_gmea[[1]]$median
+names(stat) <- rownames(nat_vs_fh_gmea[[1]])
+
+cres <- cameraPR(statistic=stat, index=genesets,
+  use.ranks = FALSE, inter.gene.cor=0.01, sort = FALSE)
+
+cres$median <- unlist(lapply(genesets, function(g) {
+  median(stat[names(stat) %in% g ])
+}))
+
+cres <- cres[order(cres$PValue),]
+head(cres,20)
+
+cres <- cres[order(-abs(cres$median)),]
+sig <- subset(cres,FDR<0.05)
+head(sig,20)
+
+
+```
+
+Aggregate mval to genes.
+
+```{r,nat_vs_fh_excl_agg}
+
+cores=20
+tic()
+ag <- mclapply(sets,function(ps) {
+  mxss <- mxs[rownames(mxs) %in% ps,,drop=FALSE]
+  if (nrow(mxss>1)) {
+    o <- apply(mxss,2,median)
+  } else {
+    o <- mxss
+  }
+  o
+},mc.cores=cores)
+ag2 <- do.call(rbind,ag)
+nat_vs_fh_gmea2 <- main(mval=ag2,design=design,sets=genesets,cores=cores )
+toc()
+
+sig <- subset(nat_vs_fh_gmea2[[1]],FDR<0.05 & nprobes>=5)
+head(sig,20)
+
+sig <- sig[order(-abs(sig$median)),]
+head(sig,20)
+
+```
+
+Let's take a look at elapsed time.
+
+| threads | elapsed time (s) |
+| --- | ---|
+| 2 | 217 |
+| 4 | 165 |
+| 8 | 96 |
+| 12 | 78 |
+| 16 | 69 |
+| 20 | 65 |
+| 24 | failed |
 
 ### NAT vs FZ
 
@@ -800,13 +937,13 @@ top_fh_vs_fz$dma
 top_nat_vs_fx$dma
 top_iui_vs_fx$dma
 
-```{r,genesets, fig.width = 8 ,fig.height = 8}
+```{r,genesets1, fig.width = 8 ,fig.height = 8}
 
 library("mitch")
 # gene sets
-download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
-    destfile="ReactomePathways.gmt.zip")
-unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
+#download.file("https://reactome.org/download/current/ReactomePathways.gmt.zip", 
+#    destfile="ReactomePathways.gmt.zip")
+#unzip("ReactomePathways.gmt.zip",overwrite = TRUE)
 genesets <- gmt_import("ReactomePathways.gmt")
 
 ```
